@@ -3,23 +3,47 @@ import api from '../api';
 
 function AuthPage() {
   const [isLogin, setIsLogin] = useState(true);
-  const [formData, setFormData] = useState({ username: '', password: '', confirm: '' });
+  const [formData, setFormData] = useState({ username: '', password: '', password_confirm: '' });
   const [error, setError] = useState('');
+  const [fieldErrors, setFieldErrors] = useState({});
 
-  const handleChange = (e) => setFormData({ ...formData, [e.target.name]: e.target.value });
+  const handleChange = (e) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+    // Очищаем ошибку поля при изменении
+    if (fieldErrors[e.target.name]) {
+      setFieldErrors({ ...fieldErrors, [e.target.name]: '' });
+    }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
+    setFieldErrors({});
 
-    if (!isLogin && formData.password !== formData.confirm) {
-      setError('Пароли не совпадают');
-      return;
+    // Клиентская валидация для регистрации
+    if (!isLogin) {
+      const newErrors = {};
+      
+      if (!formData.username || formData.username.trim() === '') {
+        newErrors.username = 'Логин не может быть пустым';
+      }
+      if (!formData.password || formData.password.trim() === '') {
+        newErrors.password = 'Пароль не может быть пустым';
+      }
+      if (formData.password !== formData.password_confirm) {
+        newErrors.password_confirm = 'Пароли не совпадают';
+      }
+      
+      if (Object.keys(newErrors).length > 0) {
+        setFieldErrors(newErrors);
+        setError('Исправьте ошибки в форме');
+        return;
+      }
     }
 
     try {
       if (!isLogin) {
-        await api.post('/auth/register/', { username: formData.username, password: formData.password });
+        await api.post('/auth/register/', { username: formData.username, password: formData.password, password_confirm: formData.password_confirm });
       }
       
       const res = await api.post('/auth/login/', { username: formData.username, password: formData.password });
@@ -28,14 +52,39 @@ function AuthPage() {
       window.location.href = '/';
     } catch (err) {
       const data = err.response?.data;
-      
-      // Обработка ошибки от DRF, если логин уже занят
-      if (data?.username) {
-        setError('Такой пользователь уже существует');
-      } else if (data?.detail) {
-        setError(data.detail);
+      const newErrors = {};
+
+      // Парсим ошибки от DRF (они могут быть в разных форматах)
+      if (typeof data === 'object' && data !== null) {
+        // Обработка ошибок по полям
+        if (data.username) {
+          const msg = Array.isArray(data.username) ? data.username[0] : data.username;
+          newErrors.username = msg;
+        }
+        if (data.password) {
+          const msg = Array.isArray(data.password) ? data.password[0] : data.password;
+          newErrors.password = msg;
+        }
+        if (data.password_confirm) {
+          const msg = Array.isArray(data.password_confirm) ? data.password_confirm[0] : data.password_confirm;
+          newErrors.password_confirm = msg;
+        }
+        
+        // Обработка общих ошибок
+        if (data.detail) {
+          setError(data.detail);
+        } else if (data.non_field_errors) {
+          const msg = Array.isArray(data.non_field_errors) ? data.non_field_errors[0] : data.non_field_errors;
+          setError(msg);
+        } else if (Object.keys(newErrors).length === 0) {
+          setError('Ошибка авторизации. Проверьте данные.');
+        }
       } else {
         setError('Ошибка авторизации. Проверьте данные.');
+      }
+
+      if (Object.keys(newErrors).length > 0) {
+        setFieldErrors(newErrors);
       }
     }
   };
@@ -53,28 +102,31 @@ function AuthPage() {
           <label className="block text-sm mb-1">Логин</label>
           <input 
             type="text" name="username" required
-            className="w-full border p-2 rounded dark:bg-gray-700 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className={`w-full border p-2 rounded dark:bg-gray-700 dark:border-gray-600 focus:outline-none focus:ring-2 ${fieldErrors.username ? 'border-red-500 focus:ring-red-500' : 'focus:ring-blue-500'}`}
             onChange={handleChange}
           />
+          {fieldErrors.username && <p className="text-red-600 text-sm mt-1">{fieldErrors.username}</p>}
         </div>
 
         <div>
           <label className="block text-sm mb-1">Пароль</label>
           <input 
             type="password" name="password" required
-            className="w-full border p-2 rounded dark:bg-gray-700 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className={`w-full border p-2 rounded dark:bg-gray-700 dark:border-gray-600 focus:outline-none focus:ring-2 ${fieldErrors.password ? 'border-red-500 focus:ring-red-500' : 'focus:ring-blue-500'}`}
             onChange={handleChange}
           />
+          {fieldErrors.password && <p className="text-red-600 text-sm mt-1">{fieldErrors.password}</p>}
         </div>
 
         {!isLogin && (
           <div>
             <label className="block text-sm mb-1">Подтверждение пароля</label>
             <input 
-              type="password" name="confirm" required={!isLogin}
-              className="w-full border p-2 rounded dark:bg-gray-700 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              type="password" name="password_confirm" required={!isLogin}
+              className={`w-full border p-2 rounded dark:bg-gray-700 dark:border-gray-600 focus:outline-none focus:ring-2 ${fieldErrors.password_confirm ? 'border-red-500 focus:ring-red-500' : 'focus:ring-blue-500'}`}
               onChange={handleChange}
             />
+            {fieldErrors.password_confirm && <p className="text-red-600 text-sm mt-1">{fieldErrors.password_confirm}</p>}
           </div>
         )}
 

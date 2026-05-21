@@ -1,18 +1,79 @@
 from rest_framework import serializers
+from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
+from django.contrib.auth.password_validation import validate_password
+from django.contrib.auth import authenticate
 from .models import User, Tag, MLModel, InferenceLog
 
+class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
+    def validate(self, attrs):
+        try:
+            return super().validate(attrs)
+        except Exception as e:
+            # Переводим стандартные сообщения об ошибках на русский
+            if "No active account found" in str(e) or "Unable to log in" in str(e):
+                raise serializers.ValidationError({
+                    'non_field_errors': ['Неправильный логин или пароль']
+                })
+            raise
+
 class RegisterSerializer(serializers.ModelSerializer):
-    password = serializers.CharField(write_only=True)
+    password = serializers.CharField(
+        write_only=True, 
+        required=True, 
+        min_length=6,
+        error_messages={
+            'required': 'Пароль не может быть пустым',
+            'blank': 'Пароль не может быть пустым',
+            'min_length': 'Пароль должен быть не менее 6 символов'
+        }
+    )
+    password_confirm = serializers.CharField(
+        write_only=True, 
+        required=True,
+        error_messages={
+            'required': 'Подтверждение пароля не может быть пустым',
+            'blank': 'Подтверждение пароля не может быть пустым'
+        }
+    )
 
     class Meta:
         model = User
-        fields = ('id', 'username', 'password')
+        fields = ('id', 'username', 'password', 'password_confirm')
+        extra_kwargs = {
+            'username': {
+                'error_messages': {
+                    'required': 'Логин не может быть пустым',
+                    'blank': 'Логин не может быть пустым',
+                }
+            }
+        }
+
+    def validate_username(self, value):
+        if len(value) < 3:
+            raise serializers.ValidationError('Логин должен быть не менее 3 символов')
+        if len(value) > 150:
+            raise serializers.ValidationError('Логин не должен превышать 150 символов')
+        if User.objects.filter(username=value).exists():
+            raise serializers.ValidationError('Пользователь с таким логином уже существует')
+        return value
+
+    def validate_password(self, value):
+        if len(value) < 6:
+            raise serializers.ValidationError('Пароль должен быть не менее 6 символов')
+        return value
+
+    def validate(self, data):
+        if data['password'] != data['password_confirm']:
+            raise serializers.ValidationError({
+                'password_confirm': 'Пароли не совпадают'
+            })
+        return data
 
     def create(self, validated_data):
         user = User.objects.create_user(
             username=validated_data['username'],
             password=validated_data['password'],
-            role='USER' # Жестко задаем роль
+            role='USER'
         )
         return user
     

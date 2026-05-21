@@ -10,15 +10,19 @@ from adrf.views import APIView as AsyncAPIView
 from rest_framework.response import Response
 from rest_framework import status, generics
 from rest_framework.permissions import IsAuthenticated, AllowAny
+from rest_framework_simplejwt.views import TokenObtainPairView
 
 from .models import MLModel, InferenceLog, User, Tag
 from .permissions import IsAdminRole
-from .serializers import RegisterSerializer, MLModelSerializer, AdminMLModelSerializer, InferenceLogSerializer, TagSerializer
+from .serializers import RegisterSerializer, CustomTokenObtainPairSerializer, MLModelSerializer, AdminMLModelSerializer, InferenceLogSerializer, TagSerializer
 
 class RegisterView(generics.CreateAPIView):
     queryset = User.objects.all()
     permission_classes = [AllowAny]
     serializer_class = RegisterSerializer
+
+class LoginView(TokenObtainPairView):
+    serializer_class = CustomTokenObtainPairSerializer
 
 # Вспомогательная синхронная функция для сохранения логов (и файлов) в БД
 def save_log_sync(user, model, latency_ms, http_status, req_payload, res_payload, image_content):
