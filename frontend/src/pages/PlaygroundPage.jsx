@@ -12,6 +12,7 @@ function PlaygroundPage() {
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [expandedImage, setExpandedImage] = useState(null);
 
   useEffect(() => {
     // Получаем модель
@@ -39,6 +40,15 @@ function PlaygroundPage() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const downloadImage = (imageUrl, filename) => {
+    const link = document.createElement('a');
+    link.href = imageUrl;
+    link.download = filename || 'image.jpg';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
   if (!model) return <div>Загрузка...</div>;
@@ -95,7 +105,20 @@ function PlaygroundPage() {
             )}
 
             {result && model.output_type === 'IMAGE' && result.image_url && (
-              <img src={result.image_url} alt="Generated" className="max-w-full h-auto rounded" />
+              <div className="flex flex-col items-center">
+                <img
+                  src={result.image_url}
+                  alt="Generated"
+                  onClick={() => setExpandedImage(result.image_url)}
+                  className="max-w-full h-auto rounded cursor-pointer hover:opacity-90 transition-opacity"
+                />
+                <button
+                  onClick={() => downloadImage(result.image_url, `generated_${Date.now()}.jpg`)}
+                  className="mt-4 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded font-medium transition-colors text-sm"
+                >
+                  Скачать
+                </button>
+              </div>
             )}
 
             {result && (
@@ -106,7 +129,35 @@ function PlaygroundPage() {
           </div>
         </div>
       </div>
-    </div>
+      {/* MODAL ДЛЯ ПРОСМОТРА КАРТИНКИ */}
+      {expandedImage && (
+        <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4" onClick={() => setExpandedImage(null)}>
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg max-w-2xl w-full" onClick={(e) => e.stopPropagation()}>
+            <div className="flex justify-between items-center p-4 border-b dark:border-gray-700">
+              <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100">Просмотр изображения</h2>
+              <button
+                onClick={() => setExpandedImage(null)}
+                className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 text-2xl font-bold"
+              >
+                ×
+              </button>
+            </div>
+            <div className="p-4 flex flex-col items-center">
+              <img
+                src={expandedImage}
+                alt="Full size"
+                className="max-w-full max-h-96 rounded"
+              />
+              <button
+                onClick={() => downloadImage(expandedImage, `generated_${Date.now()}.jpg`)}
+                className="mt-4 px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded font-medium transition-colors"
+              >
+                Скачать
+              </button>
+            </div>
+          </div>
+        </div>
+      )}    </div>
   );
 }
 

@@ -25,6 +25,10 @@ function AdminPage() {
   const [globalLogs, setGlobalLogs] = useState([]);
   const [filters, setFilters] = useState({ user: '', model: '', status: '' });
   const [csvFile, setCsvFile] = useState(null);
+  
+  // Модальные окна подтверждения удаления
+  const [deleteModalModel, setDeleteModalModel] = useState(null);
+  const [deleteModalTag, setDeleteModalTag] = useState(null);
 
   useEffect(() => {
     fetchTags();
@@ -128,14 +132,28 @@ function AdminPage() {
   };
 
   const handleDeleteTag = async (id) => {
-    if (!window.confirm("Удалить этот тег?")) return;
     try {
       await api.delete(`/tags/${id}/`);
+      setDeleteModalTag(null);
       fetchTags();
       if (activeTab === 'models') fetchModels();
       showNotify('Тег удален!');
     } catch (err) {
       showNotify('Ошибка при удалении', 'error');
+    }
+  };
+
+  const handleDeleteModel = async (id) => {
+    try {
+      await api.delete(`/models/${id}/`);
+      setDeleteModalModel(null);
+      fetchModels();
+      setEditingModelId(null);
+      setModelForm(defaultModelForm);
+      setInitialModelForm(defaultModelForm);
+      showNotify('Модель удалена!');
+    } catch (err) {
+      showNotify('Ошибка при удалении модели', 'error');
     }
   };
 
@@ -217,7 +235,7 @@ function AdminPage() {
               {modelForm.tags.length === 0 && <p className="text-red-500 text-xs mt-1">Выберите хотя бы один тег</p>}
             </div>
             
-            <div className="pt-4">
+            <div className="pt-4 space-y-2">
               <button 
                 type="submit" 
                 disabled={!isModelFormDirty() || modelForm.tags.length === 0}
@@ -227,6 +245,15 @@ function AdminPage() {
               >
                 {editingModelId ? 'Сохранить изменения' : 'Зарегистрировать и проверить'}
               </button>
+              {editingModelId && (
+                <button 
+                  type="button"
+                  onClick={() => setDeleteModalModel(editingModelId)}
+                  className="w-full px-4 py-2 rounded transition-colors font-medium text-white bg-red-600 hover:bg-red-700"
+                >
+                  Удалить модель
+                </button>
+              )}
             </div>
           </form>
         </div>
@@ -258,7 +285,7 @@ function AdminPage() {
                 <div key={tag.id} className="flex items-center space-x-2 bg-gray-100 dark:bg-gray-900 pr-2 rounded overflow-hidden border dark:border-gray-700">
                   <div className="w-4 h-full py-3" style={{ backgroundColor: tag.color }}></div>
                   <span className="text-sm font-medium px-1">{tag.name}</span>
-                  <button onClick={() => handleDeleteTag(tag.id)} className="text-red-500 hover:text-red-700 font-bold ml-2 text-xs">×</button>
+                  <button type="button" onClick={() => setDeleteModalTag(tag.id)} className="text-red-500 hover:text-red-700 font-bold ml-2 text-xs">×</button>
                 </div>
               ))}
             </div>
@@ -329,6 +356,58 @@ function AdminPage() {
               <input type="file" accept=".csv" onChange={(e) => setCsvFile(e.target.files[0])} className="flex-1 border border-gray-200 dark:border-gray-600 p-2 rounded text-sm" />
               <button type="submit" className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded">Загрузить</button>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* МОДАЛЬНОЕ ОКНО УДАЛЕНИЯ МОДЕЛИ */}
+      {deleteModalModel && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg max-w-sm">
+            <h2 className="text-lg font-bold mb-4 text-gray-900 dark:text-gray-100">Удалить модель?</h2>
+            <p className="text-gray-700 dark:text-gray-300 mb-6">
+              Вы уверены, что хотите удалить модель <strong>{modelsList.find(m => m.id === deleteModalModel)?.name}</strong>? Это действие необратимо.
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setDeleteModalModel(null)}
+                className="flex-1 px-4 py-2 rounded font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+              >
+                Отмена
+              </button>
+              <button
+                onClick={() => handleDeleteModel(deleteModalModel)}
+                className="flex-1 px-4 py-2 rounded font-medium text-white bg-red-600 hover:bg-red-700 transition-colors"
+              >
+                Удалить
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* МОДАЛЬНОЕ ОКНО УДАЛЕНИЯ ТЕГА */}
+      {deleteModalTag && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg max-w-sm">
+            <h2 className="text-lg font-bold mb-4 text-gray-900 dark:text-gray-100">Удалить тег?</h2>
+            <p className="text-gray-700 dark:text-gray-300 mb-6">
+              Вы уверены, что хотите удалить тег <strong>{tags.find(t => t.id === deleteModalTag)?.name}</strong>? Это действие необратимо.
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setDeleteModalTag(null)}
+                className="flex-1 px-4 py-2 rounded font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+              >
+                Отмена
+              </button>
+              <button
+                onClick={() => handleDeleteTag(deleteModalTag)}
+                className="flex-1 px-4 py-2 rounded font-medium text-white bg-red-600 hover:bg-red-700 transition-colors"
+              >
+                Удалить
+              </button>
+            </div>
           </div>
         </div>
       )}
