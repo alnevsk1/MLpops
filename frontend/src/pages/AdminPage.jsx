@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Fragment } from 'react';
 import api from '../api';
 
 function AdminPage() {
@@ -284,13 +284,38 @@ function AdminPage() {
                 </thead>
                 <tbody>
                   {globalLogs.map(log => (
-                    <tr key={log.id} className="border-b dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
-                      <td className="p-3 text-xs text-gray-500">{log.id} | {new Date(log.created_at).toLocaleString('ru-RU')}</td>
-                      <td className="p-3">{log.username ? `${log.username} (${log.user_id})` : 'N/A'}</td>
-                      <td className="p-3 font-medium">{log.model_name ? `${log.model_name} (${log.model_id})` : 'N/A'}</td>
-                      <td className="p-3"><span className={`px-2 py-1 rounded text-white text-xs ${log.http_status === 200 ? 'bg-green-500' : 'bg-red-500'}`}>{log.http_status}</span></td>
-                      <td className="p-3 font-mono text-xs">{log.latency_ms} ms</td>
-                    </tr>
+                    <React.Fragment key={log.id}>
+                      <tr className="border-b dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors cursor-pointer group">
+                        <td className="p-3 text-xs text-gray-500">{log.id} | {new Date(log.created_at).toLocaleString('ru-RU')}</td>
+                        <td className="p-3">{log.username ? `${log.username} (${log.user_id})` : 'N/A'}</td>
+                        <td className="p-3 font-medium">{log.model_name ? `${log.model_name} (${log.model_id})` : 'N/A'}</td>
+                        <td className="p-3"><span className={`px-2 py-1 rounded text-white text-xs ${log.http_status === 200 ? 'bg-green-500' : 'bg-red-500'}`}>{log.http_status}</span></td>
+                        <td className="p-3 font-mono text-xs">{log.latency_ms} ms</td>
+                      </tr>
+                      <tr className="bg-gray-50 dark:bg-gray-900/50 border-b dark:border-gray-700">
+                        <td colSpan="5" className="p-4">
+                          <details className="cursor-pointer">
+                            <summary className="text-xs text-blue-600 dark:text-blue-400 font-medium hover:text-blue-700 dark:hover:text-blue-300">Показать детали (промпт и ответ)</summary>
+                            <div className="mt-3 space-y-3">
+                              <div className="bg-white dark:bg-gray-800 p-3 rounded border border-gray-200 dark:border-gray-700">
+                                <p className="text-xs font-semibold text-gray-600 dark:text-gray-300 mb-1">Промпт:</p>
+                                <p className="text-sm text-gray-800 dark:text-gray-200 break-words">
+                                  {log.req_payload?.inputs || (log.req_payload?.messages?.[0]?.content) || 'Неизвестный формат'}
+                                </p>
+                              </div>
+                              <div className="bg-white dark:bg-gray-800 p-3 rounded border border-gray-200 dark:border-gray-700">
+                                <p className="text-xs font-semibold text-gray-600 dark:text-gray-300 mb-1">Ответ модели (JSON):</p>
+                                <div className="overflow-auto border border-gray-300 dark:border-gray-600 rounded bg-gray-100 dark:bg-gray-900">
+                                  <pre className="text-[10px] p-3 text-gray-800 dark:text-gray-300 whitespace-pre-wrap break-words max-h-64">
+                                    {JSON.stringify(log.res_payload, null, 2)}
+                                  </pre>
+                                </div>
+                              </div>
+                            </div>
+                          </details>
+                        </td>
+                      </tr>
+                    </React.Fragment>
                   ))}
                 </tbody>
               </table>

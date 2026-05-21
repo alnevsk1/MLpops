@@ -16,6 +16,24 @@ function HistoryPage() {
     return 'Неизвестный формат';
   };
 
+  // Извлекаем текстовый ответ из JSON
+  const getResponseText = (payload) => {
+    if (!payload) return 'Нет ответа';
+    
+    // Для текстовых моделей (chat-like)
+    if (typeof payload === 'object') {
+      if (payload.choices && Array.isArray(payload.choices) && payload.choices.length > 0) {
+        const choice = payload.choices[0];
+        if (choice.message && choice.message.content) return choice.message.content;
+        if (choice.text) return choice.text;
+      }
+      if (payload[0] && payload[0].generated_text) return payload[0].generated_text;
+      if (typeof payload === 'string') return payload;
+    }
+    
+    return 'Неизвестный формат';
+  };
+
   return (
     <div>
       <h1 className="text-3xl font-bold mb-6">История генераций</h1>
@@ -49,12 +67,9 @@ function HistoryPage() {
                       className="h-12 w-12 object-cover rounded border cursor-pointer hover:scale-150 transition-transform origin-left"
                     />
                   ) : (
-                    <details className="cursor-pointer">
-                        <summary className="text-xs text-blue-600 dark:text-blue-400 font-medium">Показать JSON</summary>
-                        <pre className="text-[10px] bg-gray-100 dark:bg-gray-900 p-2 mt-2 rounded max-w-xs overflow-x-auto text-gray-800 dark:text-gray-300">
-                        {JSON.stringify(log.res_payload, null, 2)}
-                        </pre>
-                    </details>
+                    <span className="text-xs text-gray-600 dark:text-gray-300 line-clamp-2 max-w-xs">
+                      {getResponseText(log.res_payload)}
+                    </span>
                   )}
                 </td>
                 <td className="p-4">
