@@ -25,6 +25,8 @@ function AdminPage() {
   const [globalLogs, setGlobalLogs] = useState([]);
   const [filters, setFilters] = useState({ user: '', model: '', status: '' });
   const [csvFile, setCsvFile] = useState(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
   
   // Модальные окна подтверждения удаления
   const [deleteModalModel, setDeleteModalModel] = useState(null);
@@ -43,7 +45,10 @@ function AdminPage() {
     if (filters.user) params.append('user', filters.user);
     if (filters.model) params.append('model', filters.model);
     if (filters.status) params.append('status', filters.status);
-    api.get(`/logs/all/?${params.toString()}`).then(res => setGlobalLogs(res.data));
+    api.get(`/logs/all/?${params.toString()}`).then(res => {
+      setGlobalLogs(res.data);
+      setCurrentPage(1); // Сбрасываем страницу при применении фильтра
+    });
   };
 
   // --- ЛОГИКА ФОРМЫ МОДЕЛЕЙ ---
@@ -310,7 +315,7 @@ function AdminPage() {
                   <tr><th className="p-3">ID / Дата</th><th className="p-3">User (ID)</th><th className="p-3">Модель (ID)</th><th className="p-3">Статус</th><th className="p-3">Latency</th></tr>
                 </thead>
                 <tbody>
-                  {globalLogs.map(log => (
+                  {globalLogs.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage).map(log => (
                     <React.Fragment key={log.id}>
                       <tr className="border-b dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors cursor-pointer group">
                         <td className="p-3 text-xs text-gray-500">{log.id} | {new Date(log.created_at).toLocaleString('ru-RU')}</td>
@@ -347,6 +352,46 @@ function AdminPage() {
                 </tbody>
               </table>
             </div>
+
+            {/* ПАГИНАЦИЯ */}
+            {globalLogs.length > 0 && (
+              <div className="mt-6 flex items-center justify-between">
+                <div className="text-sm text-gray-600 dark:text-gray-400">
+                  Показано {(currentPage - 1) * itemsPerPage + 1}-{Math.min(currentPage * itemsPerPage, globalLogs.length)} из {globalLogs.length} логов
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                    disabled={currentPage === 1}
+                    className="px-3 py-1 rounded border border-gray-300 dark:border-gray-600 text-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-100 dark:hover:bg-gray-700"
+                  >
+                    ← Назад
+                  </button>
+                  <div className="flex items-center gap-1">
+                    {Array.from({ length: Math.ceil(globalLogs.length / itemsPerPage) }, (_, i) => i + 1).map(page => (
+                      <button
+                        key={page}
+                        onClick={() => setCurrentPage(page)}
+                        className={`px-2 py-1 rounded text-sm ${
+                          page === currentPage
+                            ? 'bg-blue-600 text-white'
+                            : 'border border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700'
+                        }`}
+                      >
+                        {page}
+                      </button>
+                    ))}
+                  </div>
+                  <button
+                    onClick={() => setCurrentPage(p => Math.min(Math.ceil(globalLogs.length / itemsPerPage), p + 1))}
+                    disabled={currentPage === Math.ceil(globalLogs.length / itemsPerPage)}
+                    className="px-3 py-1 rounded border border-gray-300 dark:border-gray-600 text-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-100 dark:hover:bg-gray-700"
+                  >
+                    Вперед →
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
 
           <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 max-w-xl">

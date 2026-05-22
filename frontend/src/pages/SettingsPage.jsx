@@ -16,6 +16,13 @@ function SettingsPage() {
 
   const handleSave = async (e) => {
     e.preventDefault();
+    
+    // Проверка формата токена
+    if (!token.startsWith('hf_')) {
+      setStatusMsg({ text: 'Токен должен начинаться с "hf_"', type: 'error' });
+      return;
+    }
+    
     try {
       await api.post('/users/profile/', { hf_token: token });
       setStatusMsg({ text: 'Токен успешно сохранен!', type: 'success' });

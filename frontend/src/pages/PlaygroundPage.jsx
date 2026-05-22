@@ -36,7 +36,7 @@ function PlaygroundPage() {
       const res = await api.post(`/models/${id}/proxy/`, payload);
       setResult(res.data);
     } catch (err) {
-      setError(err.response?.data?.error || 'Ошибка при выполнении инференса');
+      setError(err.response?.data?.error || 'Ошибка при выполнении инференса (скорее всего, проблема токена)');
     } finally {
       setLoading(false);
     }
@@ -75,7 +75,7 @@ function PlaygroundPage() {
             value={prompt}
             onChange={(e) => setPrompt(e.target.value)}
             disabled={!hasToken || loading}
-            placeholder={model.output_type === 'TEXT' ? "What is the capital of France?" : "A beautiful sunset, highly detailed, 8k..."}
+            placeholder={model.output_type === 'TEXT' ? "Что такое пудж" : "Очень диталлизированный pudge из игры dota2"}
             className={`flex-1 w-full p-3 border rounded dark:bg-gray-700 dark:border-gray-600 resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 ${!hasToken ? 'opacity-50 cursor-not-allowed' : ''}`}
           />
           <button 

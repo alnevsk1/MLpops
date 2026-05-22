@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
+import { Eye } from 'lucide-react';
 import api from '../api';
 
 function HistoryPage() {
   const [logs, setLogs] = useState([]);
   const [expandedImage, setExpandedImage] = useState(null);
+  const [expandedModal, setExpandedModal] = useState(null); // { type: 'prompt' | 'response', content: string }
 
   useEffect(() => {
     api.get('/logs/').then(res => setLogs(res.data));
@@ -44,6 +46,14 @@ function HistoryPage() {
     document.body.removeChild(link);
   };
 
+  // Обрезаем текст для предпросмотра (80 символов)
+  const truncateText = (text, length = 80) => {
+    if (text.length > length) {
+      return text.substring(0, length) + '...';
+    }
+    return text;
+  };
+
   return (
     <div>
       <h1 className="text-3xl font-bold mb-6">История генераций</h1>
@@ -66,8 +76,13 @@ function HistoryPage() {
                   {new Date(log.created_at).toLocaleString('ru-RU')}
                 </td>
                 <td className="p-4 font-medium">{log.model_name}</td>
-                <td className="p-4 text-gray-600 dark:text-gray-300 italic">
-                  "{getPromptText(log.req_payload)}"
+                <td className="p-4">
+                  <div className="flex items-center gap-2 cursor-pointer hover:text-blue-600 dark:hover:text-blue-400" onClick={() => setExpandedModal({ type: 'prompt', content: getPromptText(log.req_payload) })}>
+                    <span className="text-xs text-gray-600 dark:text-gray-300 italic flex-1 line-clamp-2">
+                      "{truncateText(getPromptText(log.req_payload), 80)}"
+                    </span>
+                    <Eye size={16} className="flex-shrink-0 text-gray-400" />
+                  </div>
                 </td>
                 <td className="p-4">
                   {log.image_file ? (
@@ -78,9 +93,12 @@ function HistoryPage() {
                       className="h-12 w-12 object-cover rounded border cursor-pointer hover:scale-150 transition-transform origin-left"
                     />
                   ) : (
-                    <span className="text-xs text-gray-600 dark:text-gray-300 line-clamp-2 max-w-xs">
-                      {getResponseText(log.res_payload)}
-                    </span>
+                    <div className="flex items-center gap-2 cursor-pointer hover:text-blue-600 dark:hover:text-blue-400" onClick={() => setExpandedModal({ type: 'response', content: getResponseText(log.res_payload) })}>
+                      <span className="text-xs text-gray-600 dark:text-gray-300 flex-1 line-clamp-2">
+                        {truncateText(getResponseText(log.res_payload), 80)}
+                      </span>
+                      <Eye size={16} className="flex-shrink-0 text-gray-400" />
+                    </div>
                   )}
                 </td>
                 <td className="p-4">
@@ -127,6 +145,30 @@ function HistoryPage() {
               >
                 Скачать
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* МОДАЛЬНОЕ ОКНО ДЛЯ ПРОСМОТРА ПРОМПТА ИЛИ ОТВЕТА */}
+      {expandedModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4" onClick={() => setExpandedModal(null)}>
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg max-w-2xl w-full max-h-96" onClick={(e) => e.stopPropagation()}>
+            <div className="flex justify-between items-center p-4 border-b dark:border-gray-700">
+              <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100">
+                {expandedModal.type === 'prompt' ? 'Полный промпт' : 'Полный ответ модели'}
+              </h2>
+              <button
+                onClick={() => setExpandedModal(null)}
+                className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 text-2xl font-bold"
+              >
+                ×
+              </button>
+            </div>
+            <div className="p-4 overflow-auto max-h-80">
+              <p className="text-sm text-gray-800 dark:text-gray-200 whitespace-pre-wrap break-words">
+                {expandedModal.content}
+              </p>
             </div>
           </div>
         </div>
