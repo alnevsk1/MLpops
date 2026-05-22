@@ -90,58 +90,60 @@ function AuthPage() {
   };
 
   return (
-    <div className="max-w-md mx-auto mt-10 bg-white dark:bg-gray-800 p-8 rounded-lg shadow-md border border-gray-200 dark:border-gray-700">
-      <h2 className="text-2xl font-bold mb-6 text-center">
-        {isLogin ? 'Вход в систему' : 'Регистрация'}
-      </h2>
-      
-      {error && <div className="bg-red-100 text-red-700 p-3 rounded mb-4 text-sm">{error}</div>}
+    <div className="min-h-screen flex items-center justify-center px-4 py-8 sm:px-6 sm:py-0">
+      <div className="w-full max-w-md bg-white dark:bg-gray-800 p-6 sm:p-8 rounded-lg shadow-md border border-gray-200 dark:border-gray-700">
+        <h2 className="text-2xl sm:text-3xl font-bold mb-6 text-center">
+          {isLogin ? 'Вход в систему' : 'Регистрация'}
+        </h2>
+        
+        {error && <div className="bg-red-100 text-red-700 p-3 rounded mb-4 text-sm">{error}</div>}
 
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <div>
-          <label className="block text-sm mb-1">Логин</label>
-          <input 
-            type="text" name="username" required
-            className={`w-full border p-2 rounded dark:bg-gray-700 dark:border-gray-600 focus:outline-none focus:ring-2 ${fieldErrors.username ? 'border-red-500 focus:ring-red-500' : 'focus:ring-blue-500'}`}
-            onChange={handleChange}
-          />
-          {fieldErrors.username && <p className="text-red-600 text-sm mt-1">{fieldErrors.username}</p>}
-        </div>
-
-        <div>
-          <label className="block text-sm mb-1">Пароль</label>
-          <input 
-            type="password" name="password" required
-            className={`w-full border p-2 rounded dark:bg-gray-700 dark:border-gray-600 focus:outline-none focus:ring-2 ${fieldErrors.password ? 'border-red-500 focus:ring-red-500' : 'focus:ring-blue-500'}`}
-            onChange={handleChange}
-          />
-          {fieldErrors.password && <p className="text-red-600 text-sm mt-1">{fieldErrors.password}</p>}
-        </div>
-
-        {!isLogin && (
+        <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-sm mb-1">Подтверждение пароля</label>
+            <label className="block text-sm font-medium mb-1">Логин</label>
             <input 
-              type="password" name="password_confirm" required={!isLogin}
-              className={`w-full border p-2 rounded dark:bg-gray-700 dark:border-gray-600 focus:outline-none focus:ring-2 ${fieldErrors.password_confirm ? 'border-red-500 focus:ring-red-500' : 'focus:ring-blue-500'}`}
+              type="text" name="username" required
+              className={`w-full border p-2 sm:p-3 rounded text-base dark:bg-gray-700 dark:border-gray-600 focus:outline-none focus:ring-2 ${fieldErrors.username ? 'border-red-500 focus:ring-red-500' : 'focus:ring-blue-500'}`}
               onChange={handleChange}
             />
-            {fieldErrors.password_confirm && <p className="text-red-600 text-sm mt-1">{fieldErrors.password_confirm}</p>}
+            {fieldErrors.username && <p className="text-red-600 text-sm mt-1">{fieldErrors.username}</p>}
           </div>
-        )}
 
-        <button type="submit" className="w-full bg-blue-600 hover:bg-blue-700 text-white p-2 rounded transition-colors">
-          {isLogin ? 'Войти' : 'Создать аккаунт'}
-        </button>
-      </form>
+          <div>
+            <label className="block text-sm font-medium mb-1">Пароль</label>
+            <input 
+              type="password" name="password" required
+              className={`w-full border p-2 sm:p-3 rounded text-base dark:bg-gray-700 dark:border-gray-600 focus:outline-none focus:ring-2 ${fieldErrors.password ? 'border-red-500 focus:ring-red-500' : 'focus:ring-blue-500'}`}
+              onChange={handleChange}
+            />
+            {fieldErrors.password && <p className="text-red-600 text-sm mt-1">{fieldErrors.password}</p>}
+          </div>
 
-      <div className="mt-4 text-center text-sm">
-        <span className="text-gray-600 dark:text-gray-400">
-          {isLogin ? 'Еще нет аккаунта? ' : 'Уже есть аккаунт? '}
-        </span>
-        <button onClick={() => setIsLogin(!isLogin)} className="text-blue-500 hover:underline">
-          {isLogin ? 'Зарегистрироваться' : 'Войти'}
-        </button>
+          {!isLogin && (
+            <div>
+              <label className="block text-sm font-medium mb-1">Подтверждение пароля</label>
+              <input 
+                type="password" name="password_confirm" required={!isLogin}
+                className={`w-full border p-2 sm:p-3 rounded text-base dark:bg-gray-700 dark:border-gray-600 focus:outline-none focus:ring-2 ${fieldErrors.password_confirm ? 'border-red-500 focus:ring-red-500' : 'focus:ring-blue-500'}`}
+                onChange={handleChange}
+              />
+              {fieldErrors.password_confirm && <p className="text-red-600 text-sm mt-1">{fieldErrors.password_confirm}</p>}
+            </div>
+          )}
+
+          <button type="submit" className="w-full bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white p-2 sm:p-3 rounded transition-colors font-medium text-base">
+            {isLogin ? 'Войти' : 'Создать аккаунт'}
+          </button>
+        </form>
+
+        <div className="mt-6 text-center text-sm">
+          <span className="text-gray-600 dark:text-gray-400">
+            {isLogin ? 'Еще нет аккаунта? ' : 'Уже есть аккаунт? '}
+          </span>
+          <button onClick={() => setIsLogin(!isLogin)} className="text-blue-500 hover:underline font-medium">
+            {isLogin ? 'Зарегистрироваться' : 'Войти'}
+          </button>
+        </div>
       </div>
     </div>
   );
