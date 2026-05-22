@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { BrowserRouter, Routes, Route, Link } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Link, Navigate } from 'react-router-dom';
 import { Sun, Moon, User } from 'lucide-react';
 import AuthPage from './pages/AuthPage';
 import SettingsPage from './pages/SettingsPage';
@@ -9,35 +9,58 @@ import PlaygroundPage from './pages/PlaygroundPage';
 import HistoryPage from './pages/HistoryPage';
 import AdminPage from './pages/AdminPage';
 
+// Компонент для защиты маршрутов
+const ProtectedRoute = ({ children, isAuthenticated, isAdmin = false, role = 'USER' }) => {
+  if (!isAuthenticated) {
+    return <Navigate to="/auth" replace />;
+  }
+  if (isAdmin && role !== 'ADMIN') {
+    return <div className="text-center py-8">Доступ запрещен</div>;
+  }
+  return children;
+};
+
 function App() {
   const [isDark, setIsDark] = useState(false);
   const [username, setUsername] = useState('');
-  const [role, setRole] = useState('USER')
-  const isAuthenticated = !!localStorage.getItem('access_token');
+  const [role, setRole] = useState('USER');
+  const [isLoading, setIsLoading] = useState(true);
+  const [isAuthenticated, setIsAuthenticated] = useState(!!localStorage.getItem('access_token'));
 
-  // Инициализация темы
-useEffect(() => {
-  // 1. Инициализация темы (отрабатывает один раз при монтировании)
-  const savedTheme = localStorage.getItem('theme');
-  if (savedTheme === 'dark') {
-    setIsDark(true);
-    document.documentElement.classList.add('dark');
-  }
+  // Инициализация темы и загрузка профиля
+  useEffect(() => {
+    const initializeApp = async () => {
+      // 1. Инициализация темы
+      const savedTheme = localStorage.getItem('theme');
+      if (savedTheme === 'dark') {
+        setIsDark(true);
+        document.documentElement.classList.add('dark');
+      }
 
-  // 2. Управление данными профиля
-  if (isAuthenticated) {
-    api.get('/users/profile/')
-      .then(res => {
-        setUsername(res.data.username);
-        setRole(res.data.role);
-      }) // <-- Синтаксис исправлен здесь
-      .catch(err => console.error("Ошибка загрузки профиля", err));
-  } else {
-    // Очищаем данные, если пользователь не авторизован
-    setUsername('');
-    setRole('USER');
-  }
-}, [isAuthenticated]); // Если api меняется, его тоже стоит добавить сюда
+      // 2. Управление данными профиля
+      const token = localStorage.getItem('access_token');
+      if (token) {
+        try {
+          const res = await api.get('/users/profile/');
+          setUsername(res.data.username);
+          setRole(res.data.role);
+          setIsAuthenticated(true);
+        } catch (err) {
+          console.error("Ошибка загрузки профиля", err);
+          // Если токен невалидный, удаляем его
+          localStorage.removeItem('access_token');
+          localStorage.removeItem('refresh_token');
+          setIsAuthenticated(false);
+        }
+      } else {
+        setIsAuthenticated(false);
+      }
+      
+      setIsLoading(false);
+    };
+
+    initializeApp();
+  }, []);
 
   const toggleTheme = () => {
     if (isDark) {
@@ -91,20 +114,51 @@ useEffect(() => {
 
         {/* Основной контент */}
         <main className="flex-1 max-w-7xl mx-auto w-full px-4 py-8">
-          <Routes>
-            <Route path="/auth" element={<AuthPage />} />
-            <Route path="/settings" element={<SettingsPage />} />
-            {isAuthenticated ? (
-              <>
-                <Route path="/" element={<CatalogPage />} />
-                <Route path="/playground/:id" element={<PlaygroundPage />} />
-                <Route path="/history" element={<HistoryPage />} />
-                <Route path="/admin" element={role === 'ADMIN' ? <AdminPage /> : <div>Доступ запрещен</div>} />
-              </>
-            ) : (
-              <Route path="*" element={<AuthPage />} />
-            )}
-          </Routes>
+          {isLoading ? (
+            <div className="flex items-center justify-center h-64">
+              <div className="text-center">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+                <p className="text-gray-600 dark:text-gray-400">Загрузка...</p>
+              </div>
+            </div>
+          ) : (
+            <Routes>
+              <Route path="/auth" element={<AuthPage />} />
+              
+              <Route path="/" element={
+                <ProtectedRoute isAuthenticated={isAuthenticated}>
+                  <CatalogPage />
+                </ProtectedRoute>
+              } />
+              
+              <Route path="/playground/:id" element={
+                <ProtectedRoute isAuthenticated={isAuthenticated}>
+                  <PlaygroundPage />
+                </ProtectedRoute>
+              } />
+              
+              <Route path="/history" element={
+                <ProtectedRoute isAuthenticated={isAuthenticated}>
+                  <HistoryPage />
+                </ProtectedRoute>
+              } />
+              
+              <Route path="/settings" element={
+                <ProtectedRoute isAuthenticated={isAuthenticated}>
+                  <SettingsPage />
+                </ProtectedRoute>
+              } />
+              
+              <Route path="/admin" element={
+                <ProtectedRoute isAuthenticated={isAuthenticated} isAdmin={true} role={role}>
+                  <AdminPage />
+                </ProtectedRoute>
+              } />
+              
+              {/* Редирект неизвестных маршрутов */}
+              <Route path="*" element={<Navigate to={isAuthenticated ? "/" : "/auth"} replace />} />
+            </Routes>
+          )}
         </main>
       </div>
     </BrowserRouter>
