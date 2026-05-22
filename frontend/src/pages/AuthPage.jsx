@@ -90,7 +90,7 @@ function AuthPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4 py-8 sm:px-6 sm:py-0">
+    <div className="min-h-screen flex items-start justify-center px-4 py-8 sm:px-6 sm:py-0">
       <div className="w-full max-w-md bg-white dark:bg-gray-800 p-6 sm:p-8 rounded-lg shadow-md border border-gray-200 dark:border-gray-700">
         <h2 className="text-2xl sm:text-3xl font-bold mb-6 text-center">
           {isLogin ? 'Вход в систему' : 'Регистрация'}

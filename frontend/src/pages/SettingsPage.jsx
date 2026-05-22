@@ -34,7 +34,7 @@ function SettingsPage() {
   };
 
   return (
-    <div className="max-w-xl mx-auto px-0 sm:px-4">
+    <div className="max-w-3xl mx-auto px-0 sm:px-4">
       <h1 className="text-2xl sm:text-3xl font-bold mb-6">Настройки профиля</h1>
       
       <div className="bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-800 p-3 sm:p-4 rounded-lg mb-6 text-sm sm:text-base">
