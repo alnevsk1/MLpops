@@ -2,6 +2,8 @@ from rest_framework import serializers
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from django.contrib.auth.password_validation import validate_password
 from django.contrib.auth import authenticate
+from django.core.exceptions import ValidationError as DjangoValidationError
+from django.contrib.auth.validators import UnicodeUsernameValidator
 from .models import User, Tag, MLModel, InferenceLog
 
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
@@ -17,6 +19,14 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
             raise
 
 class RegisterSerializer(serializers.ModelSerializer):
+    username = serializers.CharField(
+        max_length=150,
+        error_messages={
+            'required': 'Логин не может быть пустым',
+            'blank': 'Логин не может быть пустым',
+            'max_length': 'Логин не должен превышать 150 символов'
+        }
+    )
     password = serializers.CharField(
         write_only=True, 
         required=True, 
@@ -39,16 +49,13 @@ class RegisterSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ('id', 'username', 'password', 'password_confirm')
-        extra_kwargs = {
-            'username': {
-                'error_messages': {
-                    'required': 'Логин не может быть пустым',
-                    'blank': 'Логин не может быть пустым',
-                }
-            }
-        }
 
     def validate_username(self, value):
+        import re
+        # Проверка паттерна (буквы, цифры и специальные символы: @, ., +, -, _)
+        if not re.match(r'^[\w.@+-]+$', value):
+            raise serializers.ValidationError('Логин может содержать только буквы, цифры и символы @, ., +, -, _')
+        
         if len(value) < 3:
             raise serializers.ValidationError('Логин должен быть не менее 3 символов')
         if len(value) > 150:

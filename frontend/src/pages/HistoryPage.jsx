@@ -1,14 +1,19 @@
 import React, { useState, useEffect } from 'react';
-import { Eye } from 'lucide-react';
+import { Eye, ChevronLeft, ChevronRight } from 'lucide-react';
 import api from '../api';
 
 function HistoryPage() {
   const [logs, setLogs] = useState([]);
   const [expandedImage, setExpandedImage] = useState(null);
   const [expandedModal, setExpandedModal] = useState(null); // { type: 'prompt' | 'response', content: string }
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
 
   useEffect(() => {
-    api.get('/logs/').then(res => setLogs(res.data));
+    api.get('/logs/').then(res => {
+      setLogs(res.data);
+      setCurrentPage(1);
+    });
   }, []);
 
   // Извлекаем текст промпта из JSON
@@ -77,7 +82,7 @@ function HistoryPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-                {logs.map(log => (
+                {logs.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage).map(log => (
                   <tr key={log.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
                     <td className="p-4 whitespace-nowrap text-xs text-gray-500">
                       {new Date(log.created_at).toLocaleString('ru-RU')}
@@ -124,7 +129,7 @@ function HistoryPage() {
 
           {/* Мобильная версия - карточки */}
           <div className="md:hidden flex flex-col gap-3 sm:gap-4">
-            {logs.map(log => (
+            {logs.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage).map(log => (
               <div key={log.id} className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-4">
                 <div className="flex justify-between items-start mb-3">
                   <div className="flex-1">
@@ -182,6 +187,49 @@ function HistoryPage() {
                 </div>
               </div>
             ))}
+          </div>
+
+          {/* Pagination */}
+          <div className="mt-6 flex flex-col sm:flex-row items-center justify-between gap-4 text-sm text-gray-600 dark:text-gray-400">
+            <p>
+              Показано {(currentPage - 1) * itemsPerPage + 1}-{Math.min(currentPage * itemsPerPage, logs.length)} из {logs.length} записей
+            </p>
+            
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                disabled={currentPage === 1}
+                className="flex items-center gap-1 px-3 py-2 rounded border border-gray-300 dark:border-gray-600 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+              >
+                <ChevronLeft size={16} />
+                <span className="hidden sm:inline">Назад</span>
+              </button>
+
+              <div className="flex items-center gap-1">
+                {Array.from({ length: Math.ceil(logs.length / itemsPerPage) }, (_, i) => i + 1).map(page => (
+                  <button
+                    key={page}
+                    onClick={() => setCurrentPage(page)}
+                    className={`px-2 py-1 rounded transition-colors ${
+                      page === currentPage
+                        ? 'bg-blue-600 text-white'
+                        : 'border border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700'
+                    }`}
+                  >
+                    {page}
+                  </button>
+                ))}
+              </div>
+
+              <button
+                onClick={() => setCurrentPage(p => Math.min(Math.ceil(logs.length / itemsPerPage), p + 1))}
+                disabled={currentPage === Math.ceil(logs.length / itemsPerPage)}
+                className="flex items-center gap-1 px-3 py-2 rounded border border-gray-300 dark:border-gray-600 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+              >
+                <span className="hidden sm:inline">Вперед</span>
+                <ChevronRight size={16} />
+              </button>
+            </div>
           </div>
         </>
       )}
