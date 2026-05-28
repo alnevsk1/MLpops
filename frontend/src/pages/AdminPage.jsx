@@ -25,7 +25,6 @@ function AdminPage() {
   const [newTag, setNewTag] = useState({ name: '', color: '#3b82f6' });
   const [globalLogs, setGlobalLogs] = useState([]);
   const [filters, setFilters] = useState({ user: '', model: '', status: '' });
-  const [csvFile, setCsvFile] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [expandedImage, setExpandedImage] = useState(null);
   const itemsPerPage = 10;
@@ -43,11 +42,18 @@ function AdminPage() {
 
   const fetchTags = () => api.get('/tags/').then(res => setTags(res.data));
   const fetchModels = () => api.get('/models/').then(res => setModelsList(res.data));
-  const fetchGlobalLogs = () => {
+  
+  // Вспомогательный метод для сборки query-параметров из установленных фильтров
+  const buildLogParams = () => {
     const params = new URLSearchParams();
     if (filters.user) params.append('user', filters.user);
     if (filters.model) params.append('model', filters.model);
     if (filters.status) params.append('status', filters.status);
+    return params;
+  };
+
+  const fetchGlobalLogs = () => {
+    const params = buildLogParams();
     api.get(`/logs/all/?${params.toString()}`).then(res => {
       setGlobalLogs(res.data);
       setCurrentPage(1);
@@ -74,7 +80,7 @@ function AdminPage() {
   };
 
   const handleFormSubmit = (e) => {
-    e.preventDefault(); // Предотвращает перезагрузку страницы
+    e.preventDefault();
     fetchGlobalLogs();
   };
 
@@ -111,7 +117,7 @@ function AdminPage() {
     } catch (err) { showNotify('Ошибка при удалении модели', 'error'); }
   };
 
-  // --- TAGS & CSV LOGIC ---
+  // --- TAGS LOGIC ---
   const handleSaveTag = async (e) => {
     e.preventDefault();
     try { await api.post('/tags/', newTag); setNewTag({ name: '', color: '#3b82f6' }); fetchTags(); showNotify('Тег создан!'); } 
@@ -123,14 +129,35 @@ function AdminPage() {
     catch (err) { showNotify('Ошибка при удалении', 'error'); }
   };
 
-  const handleImportCSV = async (e) => {
-    e.preventDefault();
-    if (!csvFile) return showNotify('Выберите файл', 'error');
-    const formData = new FormData(); formData.append('file', csvFile);
+  // EXPORT CSV LOGIC 
+  const handleExportCSV = async () => {
     try {
-      const res = await api.post('/logs/import/', formData, { headers: { 'Content-Type': 'multipart/form-data' }});
-      showNotify(res.data.message); setCsvFile(null); fetchGlobalLogs();
-    } catch (err) { showNotify(err.response?.data?.error || 'Ошибка импорта', 'error'); }
+      showNotify('Формирование файла экспорта...', 'info');
+      const params = buildLogParams();
+      
+      // Запрашиваем файл
+      const response = await api.get(`/logs/export/?${params.toString()}`, {
+        responseType: 'blob'
+      });
+      
+      // Создаем временную ссылку для скачивания файла на устройство
+      const blob = new Blob([response.data], { type: 'text/csv;charset=utf-8;' });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      
+      // Имя файла содержит текущую дату
+      const dateStr = new Date().toISOString().slice(0, 10);
+      link.setAttribute('download', `logs_export_${dateStr}.csv`);
+      
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      showNotify('Логи успешно экспортированы!');
+    } catch (err) { 
+      showNotify('Ошибка при экспорте логов', 'error'); 
+    }
   };
 
   return (
@@ -143,11 +170,11 @@ function AdminPage() {
 
       <h1 className="admin-title">Панель Администратора</h1>
       
-      {/* Вкладки (Скроллятся на мобилках) */}
+      {/* Вкладки */}
       <div className="flex overflow-x-auto border-b border-gray-200 dark:border-gray-700 mb-6 space-x-6 pb-1 scrollbar-hide">
         <button onClick={() => setActiveTab('models')} className={`tab-btn whitespace-nowrap ${activeTab === 'models' ? 'tab-active' : 'tab-default'}`}>Управление Моделями</button>
         <button onClick={() => setActiveTab('tags')} className={`tab-btn whitespace-nowrap ${activeTab === 'tags' ? 'tab-active' : 'tab-default'}`}>Настройка Тегов</button>
-        <button onClick={() => setActiveTab('logs')} className={`tab-btn whitespace-nowrap ${activeTab === 'logs' ? 'tab-active' : 'tab-default'}`}>Логи и Импорт</button>
+        <button onClick={() => setActiveTab('logs')} className={`tab-btn whitespace-nowrap ${activeTab === 'logs' ? 'tab-active' : 'tab-default'}`}>Логи и Экспорт</button>
       </div>
 
       {/* --- ВКЛАДКА 1: МОДЕЛИ --- */}
@@ -235,35 +262,40 @@ function AdminPage() {
         </div>
       )}
 
-      {/* --- ВКЛАДКА 3: ЛОГИ И ИМПОРТ --- */}
+      {/* --- ВКЛАДКА 3: ЛОГИ И ЭКСПОРТ --- */}
       {activeTab === 'logs' && (
         <div className="space-y-8">
           <div className="space-y-4">
-            {/* Фильтры */}
+            {/* Панель Фильтров и кнопка Экспорта */}
             <form onSubmit={handleFormSubmit} className="bg-gray-100 dark:bg-gray-800 p-4 rounded flex flex-col sm:flex-row gap-4 sm:items-end">
               <div className="flex-1">
                 <label className="form-label">User ID/Name</label>
-                <input type="text" onChange={e=>setFilters({...filters, user: e.target.value})} className="form-input py-2 text-sm"/>
+                <input type="text" value={filters.user} onChange={e=>setFilters({...filters, user: e.target.value})} className="form-input py-2 text-sm"/>
               </div>
               <div className="flex-1">
                 <label className="form-label">Model ID/Name</label>
-                <input type="text" onChange={e=>setFilters({...filters, model: e.target.value})} className="form-input py-2 text-sm"/>
+                <input type="text" value={filters.model} onChange={e=>setFilters({...filters, model: e.target.value})} className="form-input py-2 text-sm"/>
               </div>
               <div className="flex-1">
                 <label className="form-label">HTTP Статус</label>
-                <input type="text" onChange={e=>setFilters({...filters, status: e.target.value})} className="form-input py-2 text-sm"/>
+                <input type="text" value={filters.status} onChange={e=>setFilters({...filters, status: e.target.value})} className="form-input py-2 text-sm"/>
               </div>
               
-              <button type="submit" className="btn-primary w-full sm:w-auto">
-                Применить фильтр
-              </button>
+              <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+                <button type="submit" className="btn-primary w-full sm:w-auto">
+                  Применить фильтр
+                </button>
+                <button type="button" onClick={handleExportCSV} className="btn-purple w-full sm:w-auto">
+                  Экспорт в CSV
+                </button>
+              </div>
             </form>
             
             {/* Таблица логов для Десктопа */}
             <div className="table-container hidden md:block">
               <table className="table-base">
                 <thead className="table-header">
-                  <tr><th className="p-3">ID / Дата</th><th className="p-3">User</th><th className="p-3">Модель</th><th className="p-3">Статус</th><th className="p-3">Latency</th></tr>
+                  <tr><th className="p-3">ID / Дата</th><th className="p-3">User (ID)</th><th className="p-3">Модель (ID)</th><th className="p-3">Статус</th><th className="p-3">Latency</th></tr>
                 </thead>
                 <tbody>
                   {globalLogs.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage).map(log => (
@@ -356,15 +388,6 @@ function AdminPage() {
                 </div>
               </div>
             )}
-          </div>
-
-          <div className="card p-4 sm:p-6 max-w-xl">
-            <h2 className="section-title">Массовый импорт старых логов (CSV)</h2>
-            <p className="text-xs text-gray-500 mb-4">Требуемые колонки: model_id, user_id, latency_ms, http_status, req_payload, res_payload.</p>
-            <form onSubmit={handleImportCSV} className="flex flex-col sm:flex-row gap-4">
-              <input type="file" accept=".csv" onChange={(e) => setCsvFile(e.target.files[0])} className="form-input flex-1 py-1" />
-              <button type="submit" className="btn-purple w-full sm:w-auto">Загрузить</button>
-            </form>
           </div>
         </div>
       )}

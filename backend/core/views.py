@@ -5,6 +5,7 @@ import csv
 import json
 from asgiref.sync import sync_to_async
 from django.core.files.base import ContentFile
+from django.http import StreamingHttpResponse
 from rest_framework.views import APIView
 from adrf.views import APIView as AsyncAPIView
 from rest_framework.response import Response
@@ -122,36 +123,74 @@ class ProxyInferenceView(AsyncAPIView):
         return Response(response_data, status=res_status)
 
 
-class LogImportView(APIView):
+class Echo:
+    """Объект, реализующий метод write для записи строк в StreamingHttpResponse."""
+    def write(self, value):
+        return value
+
+class LogExportView(APIView):
+    """
+    Класс представления для потокового экспорта логов в формате CSV.
+    Доступен только аутентифицированным администраторам.
+    """
     permission_classes = [IsAuthenticated, IsAdminRole]
 
-    def post(self, request):
-        if 'file' not in request.FILES:
-            return Response({'error': 'Файл не предоставлен'}, status=status.HTTP_400_BAD_REQUEST)
-        
-        file = request.FILES['file']
-        decoded_file = file.read().decode('utf-8').splitlines()
-        reader = csv.DictReader(decoded_file)
+    def get(self, request):
+        user_filter = request.query_params.get('user')
+        model_filter = request.query_params.get('model')
+        http_status = request.query_params.get('status')
 
-        logs_to_create = []
-        for row in reader:
-            try:
-                logs_to_create.append(
-                    InferenceLog(
-                        model_id=int(row['model_id']),
-                        user_id=int(row['user_id']) if row.get('user_id') else request.user.id,
-                        latency_ms=int(row['latency_ms']),
-                        http_status=int(row['http_status']),
-                        req_payload=json.loads(row['req_payload'].replace("'", '"')),
-                        res_payload=json.loads(row['res_payload'].replace("'", '"')) if row.get('res_payload') else None,
-                    )
-                )
-            except Exception as e:
-                return Response({'error': f"Ошибка в строке {row}. Детали: {str(e)}"}, status=status.HTTP_400_BAD_REQUEST)
+        qs = InferenceLog.objects.all().order_by('-created_at')
+
+        # Применяем фильтры 
+        if user_filter:
+            if user_filter.isdigit():
+                qs = qs.filter(user_id=user_filter)
+            else:
+                qs = qs.filter(user__username__icontains=user_filter)
+
+        if model_filter:
+            if model_filter.isdigit():
+                qs = qs.filter(model_id=model_filter)
+            else:
+                qs = qs.filter(model__name__icontains=model_filter)
+
+        if http_status:
+            qs = qs.filter(http_status=http_status)
+
+        # Определяем заголовки столбцов CSV-файла
+        headers = [
+            'id', 'created_at', 'user_id', 'username', 
+            'model_id', 'model_name', 'latency_ms', 
+            'http_status', 'req_payload', 'res_payload'
+        ]
         
-        InferenceLog.objects.bulk_create(logs_to_create)
-        return Response({'message': f'Успешно импортировано {len(logs_to_create)} записей'}, status=status.HTTP_201_CREATED)
-    
+        # Создаем генератор для ленивой (потоковой) сборки файла
+        def csv_iterator():
+            echo_buffer = Echo()
+            writer = csv.writer(echo_buffer)
+            # Сначала отдаем строку заголовков
+            yield writer.writerow(headers)
+            
+            # Итерируемся по базе данных порциями по 2000 записей (экономия RAM)
+            for log in qs.iterator(chunk_size=2000):
+                yield writer.writerow([
+                    log.id,
+                    log.created_at.isoformat() if log.created_at else '',
+                    log.user.id if log.user else 'N/A',
+                    log.user.username if log.user else 'N/A',
+                    log.model.id if log.model else 'N/A',
+                    log.model.name if log.model else 'N/A',
+                    log.latency_ms,
+                    log.http_status,
+                    json.dumps(log.req_payload, ensure_ascii=False),
+                    json.dumps(log.res_payload, ensure_ascii=False) if log.res_payload else ''
+                ])
+
+        # Формируем потоковый ответ с принудительным скачиванием в браузере
+        response = StreamingHttpResponse(csv_iterator(), content_type="text/csv")
+        response['Content-Disposition'] = 'attachment; filename="logs_export.csv"'
+        return response
 
 class UserProfileView(APIView):
     permission_classes = [IsAuthenticated]
@@ -215,7 +254,7 @@ class InferenceLogListView(generics.ListAPIView):
         return InferenceLog.objects.filter(user=self.request.user).order_by('-created_at')
     
 
-# Теперь теги можно Создавать (POST)
+# Создавать теги (POST)
 class TagListCreateView(generics.ListCreateAPIView):
     queryset = Tag.objects.all()
     serializer_class = TagSerializer
@@ -226,7 +265,7 @@ class TagListCreateView(generics.ListCreateAPIView):
             return Response({"error": "Только для администраторов"}, status=status.HTTP_403_FORBIDDEN)
         return super().create(request, *args, **kwargs)
     
-# И Удалять/Редактировать (DELETE/PUT)
+# Удалять/Редактировать теги (DELETE/PUT)
 class TagDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Tag.objects.all()
     serializer_class = TagSerializer

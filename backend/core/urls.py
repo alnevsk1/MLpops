@@ -1,13 +1,12 @@
 from django.urls import path
 from rest_framework_simplejwt.views import TokenRefreshView
-from .views import (RegisterView, LoginView, LogImportView, 
+from .views import (RegisterView, LoginView, LogExportView,
                     ProxyInferenceView, UserProfileView,
                     MLModelListCreateView, MLModelDetailView, 
                     InferenceLogListView, 
                     AdminGlobalLogListView, TagDetailView,
                     TagListCreateView, MLModelCheckStatusView
 )
-
 urlpatterns = [
     path('auth/register/', RegisterView.as_view(), name='register'),
     path('auth/login/', LoginView.as_view(), name='token_obtain_pair'),
@@ -23,5 +22,5 @@ urlpatterns = [
     
     path('logs/', InferenceLogListView.as_view(), name='log_list'),
     path('logs/all/', AdminGlobalLogListView.as_view(), name='global_log_list'),
-    path('logs/import/', LogImportView.as_view(), name='log_import'),
+    path('logs/export/', LogExportView.as_view(), name='log_export'),
 ]
