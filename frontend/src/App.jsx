@@ -143,16 +143,47 @@ function AppContent({ isDark, toggleTheme, username, role, isLoading, isAuthenti
           </button>
         </div>
 
+        {/* Мобильное меню навигации */}
         {isAuthenticated && mobileMenuOpen && (
           <div className="md:hidden bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 p-4 space-y-2">
-            {role === 'ADMIN' && <Link to="/admin" onClick={() => setMobileMenuOpen(false)} className={`block py-2 px-4 rounded ${isActive('/admin') ? 'bg-purple-50 text-purple-600' : 'text-gray-600 hover:bg-gray-100'}`}>Админ-панель</Link>}
-            <Link to="/" onClick={() => setMobileMenuOpen(false)} className={`block py-2 px-4 rounded ${isActive('/') ? 'bg-blue-50 text-blue-600' : 'text-gray-600 hover:bg-gray-100'}`}>Каталог</Link>
-            <Link to="/history" onClick={() => setMobileMenuOpen(false)} className={`block py-2 px-4 rounded ${isActive('/history') ? 'bg-blue-50 text-blue-600' : 'text-gray-600 hover:bg-gray-100'}`}>История</Link>
-            <Link to="/settings" onClick={() => setMobileMenuOpen(false)} className={`block py-2 px-4 rounded ${isActive('/settings') ? 'bg-blue-50 text-blue-600' : 'text-gray-600 hover:bg-gray-100'}`}>Настройки</Link>
-            <div className="flex items-center text-gray-500 dark:text-gray-400 py-2 px-4 border-t border-gray-300 dark:border-gray-600 mt-2">
-              <User size={16} className="mr-2" /><span>{username}</span>
+            {role === 'ADMIN' && (
+              <Link 
+                to="/admin" 
+                onClick={() => setMobileMenuOpen(false)} 
+                className={`block py-2 px-4 rounded transition-colors ${isActive('/admin') ? 'bg-purple-50 text-purple-600 dark:bg-purple-950/40 dark:text-purple-400' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700/50'}`}
+              >
+                Админ-панель
+              </Link>
+            )}
+            <Link 
+              to="/" 
+              onClick={() => setMobileMenuOpen(false)} 
+              className={`block py-2 px-4 rounded transition-colors ${isActive('/') ? 'bg-blue-50 text-blue-600 dark:bg-blue-950/40 dark:text-blue-400' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700/50'}`}
+            >
+              Каталог
+            </Link>
+            <Link 
+              to="/history" 
+              onClick={() => setMobileMenuOpen(false)} 
+              className={`block py-2 px-4 rounded transition-colors ${isActive('/history') ? 'bg-blue-50 text-blue-600 dark:bg-blue-950/40 dark:text-blue-400' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700/50'}`}
+            >
+              История
+            </Link>
+            <Link 
+              to="/settings" 
+              onClick={() => setMobileMenuOpen(false)} 
+              className={`block py-2 px-4 rounded transition-colors ${isActive('/settings') ? 'bg-blue-50 text-blue-600 dark:bg-blue-950/40 dark:text-blue-400' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700/50'}`}
+            >
+              Настройки
+            </Link>
+            
+            <div className="flex items-center text-gray-500 dark:text-gray-400 py-2 px-4 border-t border-gray-200 dark:border-gray-700 mt-2">
+              <User size={16} className="mr-2" />
+              <span>{username}</span>
             </div>
-            <button onClick={handleLogout} className="text-left text-red-500 hover:text-red-600 py-2 px-4 w-full rounded hover:bg-gray-100">Выйти</button>
+            <button onClick={handleLogout} className="text-left text-red-500 hover:text-red-600 py-2 px-4 w-full rounded hover:bg-gray-100 dark:hover:bg-gray-700/50 transition-colors">
+              Выйти
+            </button>
           </div>
         )}
       </header>
