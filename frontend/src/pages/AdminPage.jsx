@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Eye, X } from 'lucide-react';
 import api from '../api';
 
 function AdminPage() {
@@ -26,6 +27,7 @@ function AdminPage() {
   const [filters, setFilters] = useState({ user: '', model: '', status: '' });
   const [csvFile, setCsvFile] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
+  const [expandedImage, setExpandedImage] = useState(null);
   const itemsPerPage = 10;
   
   // States: Modals
@@ -275,11 +277,28 @@ function AdminPage() {
                       </tr>
                       <tr className="bg-gray-50 dark:bg-gray-900/50 border-b dark:border-gray-700">
                         <td colSpan="5" className="p-4">
-                          <details className="cursor-pointer">
-                            <summary className="text-blue-600 dark:text-blue-400 font-medium hover:text-blue-700 dark:hover:text-blue-300">Показать детали (промпт и ответ)</summary>
+                          <details className="cursor-pointer max-h-96 overflow-y-auto">
+                            <summary className="text-blue-600 dark:text-blue-400 font-medium hover:text-blue-700 dark:hover:text-blue-300 sticky top-0 bg-gray-50 dark:bg-gray-900/50 py-1">Показать детали (промпт и ответ)</summary>
                             <div className="mt-3 space-y-3">
                               <div className="card p-3"><p className="font-semibold mb-1">Промпт:</p><p className="break-words">{log.req_payload?.inputs || log.req_payload?.messages?.[0]?.content || 'Неизвестный формат'}</p></div>
-                              <div className="card p-3"><p className="font-semibold mb-1">Ответ модели (JSON):</p><pre className="text-[14px] p-3 overflow-auto max-h-64 bg-gray-100 dark:bg-gray-900 rounded">{JSON.stringify(log.res_payload, null, 2)}</pre></div>
+                              {log.image_file ? (
+                                <div className="card p-3">
+                                  <p className="font-semibold mb-2">Результат:</p>
+                                  <div className="relative w-24 h-24 group overflow-hidden rounded-lg border border-gray-200 dark:border-gray-700">
+                                    <img 
+                                      src={log.image_file.startsWith('http') ? log.image_file : `http://127.0.0.1:8000${log.image_file}`} 
+                                      alt="Result" 
+                                      onClick={() => setExpandedImage(log.image_file)}
+                                      className="h-full w-full object-cover cursor-pointer group-hover:scale-110 transition-transform duration-200"
+                                    />
+                                    <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 pointer-events-none flex items-center justify-center transition-opacity">
+                                      <Eye size={14} className="text-white" />
+                                    </div>
+                                  </div>
+                                </div>
+                              ) : (
+                                <div className="card p-3"><p className="font-semibold mb-1">Ответ модели (JSON):</p><pre className="text-[12px] p-3 overflow-auto max-h-80 bg-gray-100 dark:bg-gray-900 rounded font-mono break-words whitespace-pre-wrap">{JSON.stringify(log.res_payload, null, 2)}</pre></div>
+                              )}
                             </div>
                           </details>
                         </td>
@@ -301,11 +320,25 @@ function AdminPage() {
                    <div className="text-xs text-gray-500 mb-2">
                      Юзер: {log.username} ({log.user_id}) | {new Date(log.created_at).toLocaleString('ru-RU')}
                    </div>
-                   <details className="cursor-pointer bg-gray-50 dark:bg-gray-700/30 p-2 rounded border border-gray-200 dark:border-gray-700">
-                      <summary className="text-xs text-blue-600 dark:text-blue-400 font-medium">Показать детали</summary>
+                   <details className="cursor-pointer bg-gray-50 dark:bg-gray-700/30 p-2 rounded border border-gray-200 dark:border-gray-700 max-h-96 overflow-y-auto">
+                      <summary className="text-xs text-blue-600 dark:text-blue-400 font-medium sticky top-0 bg-gray-50 dark:bg-gray-700/30 py-1">Показать детали</summary>
                       <div className="mt-3 space-y-2">
                         <div><p className="text-[10px] font-bold text-gray-500">Промпт:</p><p className="text-xs break-words">{log.req_payload?.inputs || log.req_payload?.messages?.[0]?.content || 'Неизвестный формат'}</p></div>
-                        <div><p className="text-[10px] font-bold text-gray-500">Ответ (JSON):</p><pre className="text-[10px] p-2 overflow-auto max-h-40 bg-gray-200 dark:bg-gray-900 rounded">{JSON.stringify(log.res_payload, null, 2)}</pre></div>
+                        {log.image_file ? (
+                          <div>
+                            <p className="text-[10px] font-bold text-gray-500 mb-1">Результат:</p>
+                            <div className="relative rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700">
+                              <img 
+                                src={log.image_file.startsWith('http') ? log.image_file : `http://127.0.0.1:8000${log.image_file}`} 
+                                alt="Result" 
+                                onClick={() => setExpandedImage(log.image_file)}
+                                className="w-full h-36 object-cover cursor-pointer hover:opacity-90 transition-opacity"
+                              />
+                            </div>
+                          </div>
+                        ) : (
+                          <div><p className="text-[10px] font-bold text-gray-500 mb-1">Ответ (JSON):</p><pre className="text-[10px] p-2 overflow-auto max-h-64 bg-gray-200 dark:bg-gray-900 rounded font-mono break-words whitespace-pre-wrap">{JSON.stringify(log.res_payload, null, 2)}</pre></div>
+                        )}
                       </div>
                    </details>
                    <div className="text-xs mt-2 font-mono text-gray-400 text-right">{log.latency_ms} ms</div>
@@ -350,7 +383,7 @@ function AdminPage() {
         </div>
       )}
 
-      {/* Модалки удаления (Теги) */}
+      {/* Модалка удаления (Теги) */}
       {deleteModalTag && (
         <div className="modal-backdrop">
           <div className="modal-content max-w-sm p-6">
@@ -359,6 +392,27 @@ function AdminPage() {
             <div className="flex flex-col sm:flex-row gap-3">
               <button onClick={() => setDeleteModalTag(null)} className="btn-outline flex-1">Отмена</button>
               <button onClick={() => handleDeleteTag(deleteModalTag)} className="btn-danger flex-1">Удалить</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Модалка просмотра полноразмерного изображения */}
+      {expandedImage && (
+        <div className="modal-backdrop" onClick={() => setExpandedImage(null)}>
+          <div className="fixed inset-0 flex items-center justify-center p-4 z-50" onClick={() => setExpandedImage(null)}>
+            <div className="relative max-w-3xl max-h-[90vh] bg-white dark:bg-gray-900 rounded-xl shadow-2xl overflow-hidden" onClick={(e) => e.stopPropagation()}>
+              <button 
+                onClick={() => setExpandedImage(null)} 
+                className="absolute top-4 right-4 z-10 bg-white dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full p-2 transition-colors"
+              >
+                <X size={20} className="text-gray-600 dark:text-gray-300" />
+              </button>
+              <img 
+                src={expandedImage.startsWith('http') ? expandedImage : `http://127.0.0.1:8000${expandedImage}`}
+                alt="Full size" 
+                className="max-w-full max-h-[90vh] object-contain"
+              />
             </div>
           </div>
         </div>
