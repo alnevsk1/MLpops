@@ -2,7 +2,9 @@ import React, { useState, useEffect } from 'react';
 import api from '../api';
 
 function AdminPage() {
-  const [activeTab, setActiveTab] = useState('models');
+  const [activeTab, setActiveTab] = useState(() => {
+    return localStorage.getItem('adminActiveTab') || 'models';
+  });
   const [notify, setNotify] = useState({ text: '', type: '' });
   
   const showNotify = (text, type = 'success') => {
@@ -31,6 +33,7 @@ function AdminPage() {
   const [deleteModalTag, setDeleteModalTag] = useState(null);
 
   useEffect(() => {
+    localStorage.setItem('adminActiveTab', activeTab);
     fetchTags();
     if (activeTab === 'models') fetchModels();
     if (activeTab === 'logs') fetchGlobalLogs();
@@ -231,9 +234,9 @@ function AdminPage() {
           <div className="space-y-4">
             {/* Фильтры */}
             <div className="bg-gray-100 dark:bg-gray-800 p-4 rounded flex flex-col sm:flex-row gap-4 sm:items-end">
-              <div className="flex-1"><label className="form-label text-xs">User ID/Name</label><input type="text" onChange={e=>setFilters({...filters, user: e.target.value})} className="form-input py-2 text-sm"/></div>
-              <div className="flex-1"><label className="form-label text-xs">Model ID/Name</label><input type="text" onChange={e=>setFilters({...filters, model: e.target.value})} className="form-input py-2 text-sm"/></div>
-              <div className="flex-1"><label className="form-label text-xs">HTTP Статус</label><input type="number" onChange={e=>setFilters({...filters, status: e.target.value})} className="form-input py-2 text-sm"/></div>
+              <div className="flex-1"><label className="form-label ">User ID/Name</label><input type="text" onChange={e=>setFilters({...filters, user: e.target.value})} className="form-input py-2 text-sm"/></div>
+              <div className="flex-1"><label className="form-label ">Model ID/Name</label><input type="text" onChange={e=>setFilters({...filters, model: e.target.value})} className="form-input py-2 text-sm"/></div>
+              <div className="flex-1"><label className="form-label ">HTTP Статус</label><input type="number" onChange={e=>setFilters({...filters, status: e.target.value})} className="form-input py-2 text-sm"/></div>
               <button onClick={fetchGlobalLogs} className="btn-primary w-full sm:w-auto">Применить фильтр</button>
             </div>
             
@@ -247,19 +250,19 @@ function AdminPage() {
                   {globalLogs.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage).map(log => (
                     <React.Fragment key={log.id}>
                       <tr className="table-row group">
-                        <td className="p-3 text-xs text-gray-500">{log.id} | {new Date(log.created_at).toLocaleString('ru-RU')}</td>
+                        <td className="p-3 text-gray-500">{log.id} | {new Date(log.created_at).toLocaleString('ru-RU')}</td>
                         <td className="p-3">{log.username ? `${log.username} (${log.user_id})` : 'N/A'}</td>
                         <td className="p-3 font-medium">{log.model_name ? `${log.model_name} (${log.model_id})` : 'N/A'}</td>
                         <td className="p-3"><span className={`badge ${log.http_status === 200 ? 'badge-success' : 'badge-error'}`}>{log.http_status}</span></td>
-                        <td className="p-3 font-mono text-xs">{log.latency_ms} ms</td>
+                        <td className="p-3 font-mono ">{log.latency_ms} ms</td>
                       </tr>
                       <tr className="bg-gray-50 dark:bg-gray-900/50 border-b dark:border-gray-700">
                         <td colSpan="5" className="p-4">
                           <details className="cursor-pointer">
-                            <summary className="text-xs text-blue-600 dark:text-blue-400 font-medium hover:text-blue-700 dark:hover:text-blue-300">Показать детали (промпт и ответ)</summary>
+                            <summary className="text-blue-600 dark:text-blue-400 font-medium hover:text-blue-700 dark:hover:text-blue-300">Показать детали (промпт и ответ)</summary>
                             <div className="mt-3 space-y-3">
-                              <div className="card p-3"><p className="text-xs font-semibold mb-1">Промпт:</p><p className="text-sm break-words">{log.req_payload?.inputs || log.req_payload?.messages?.[0]?.content || 'Неизвестный формат'}</p></div>
-                              <div className="card p-3"><p className="text-xs font-semibold mb-1">Ответ модели (JSON):</p><pre className="text-[10px] p-3 overflow-auto max-h-64 bg-gray-100 dark:bg-gray-900 rounded">{JSON.stringify(log.res_payload, null, 2)}</pre></div>
+                              <div className="card p-3"><p className="font-semibold mb-1">Промпт:</p><p className="break-words">{log.req_payload?.inputs || log.req_payload?.messages?.[0]?.content || 'Неизвестный формат'}</p></div>
+                              <div className="card p-3"><p className="font-semibold mb-1">Ответ модели (JSON):</p><pre className="text-[14px] p-3 overflow-auto max-h-64 bg-gray-100 dark:bg-gray-900 rounded">{JSON.stringify(log.res_payload, null, 2)}</pre></div>
                             </div>
                           </details>
                         </td>

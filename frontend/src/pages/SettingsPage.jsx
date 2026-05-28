@@ -43,7 +43,7 @@ function SettingsPage() {
 
       <div className="card p-6">
         <form onSubmit={handleSave}>
-          <label className="form-label">
+          <label className="form-label text-base">
             Ваш Hugging Face Token 
             {hasTokenSaved && <span className="ml-2 text-green-500 text-xs">(Уже сохранен)</span>}
           </label>

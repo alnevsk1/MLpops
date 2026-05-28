@@ -21,8 +21,26 @@ const NavLink = ({ to, label, isActive }) => (
   </Link>
 );
 
+// Компонент динамического логотипа
+const Logo = ({ isDark }) => {
+  return isDark ? (
+    // Темная тема 
+    <svg className="w-auto h-12 sm:h-14 py-1" xmlns="http://www.w3.org/2000/svg" viewBox="50 60 400 350">
+      <text x="250" y="210" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="135" font-weight="bold" fill="#2b76f0" text-anchor="middle">Open</text>
+      <rect x="85" y="245" width="330" height="190" rx="18" ry="18" fill="#2b76f0" />
+      <text x="250" y="380" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="135" font-weight="bold" fill="#ffffff" text-anchor="middle">hub</text>
+    </svg>
+  ) : (
+    // Светлая тема 
+    <svg className="w-auto h-12 sm:h-14 py-1" xmlns="http://www.w3.org/2000/svg" viewBox="50 60 400 350">
+      <text x="250" y="210" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="135" font-weight="bold" fill="#0d1624" text-anchor="middle">Open</text>
+      <rect x="85" y="245" width="330" height="190" rx="18" ry="18" fill="#2b76f0" />
+      <text x="250" y="380" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="135" font-weight="bold" fill="#ffffff" text-anchor="middle">hub</text>
+    </svg>
+  );
+};
+
 function App() {
-  // Логика инициализации оставлена без изменений
   const [isDark, setIsDark] = useState(false);
   const [username, setUsername] = useState('');
   const [role, setRole] = useState('USER');
@@ -94,9 +112,10 @@ function AppContent({ isDark, toggleTheme, username, role, isLoading, isAuthenti
     <div className="min-h-screen flex flex-col">
       <header className="bg-white dark:bg-gray-800 shadow-sm transition-colors sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
-          <div className="text-lg sm:text-xl font-bold text-blue-600 dark:text-blue-400">
-            Open Hub
-          </div>
+          
+          <Link to="/" className="flex items-center h-full focus:outline-none">
+            <Logo isDark={isDark} />
+          </Link>
           
           {isAuthenticated && (
             <nav className="hidden md:flex items-center space-x-4 lg:space-x-6 text-xs sm:text-sm font-medium">
@@ -156,7 +175,7 @@ function AppContent({ isDark, toggleTheme, username, role, isLoading, isAuthenti
 
       <footer className="bg-gray-50 dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700 mt-auto">
         <div className="max-w-7xl mx-auto px-4 py-8 sm:py-12">
-           <div className="text-center text-gray-500 text-sm">© 2026 Open Hub. Сделано в Google AI Studio :)</div>
+           <div className="text-center text-gray-500 text-sm">© 2026 OpenHub. Сделано в Google AI Studio :)</div>
         </div>
       </footer>
     </div>

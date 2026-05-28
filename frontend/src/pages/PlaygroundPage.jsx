@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { AlertCircle, Send, X } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
@@ -14,10 +14,23 @@ function PlaygroundPage() {
   const [error, setError] = useState('');
   const [expandedImage, setExpandedImage] = useState(null);
 
+  // Создаем ссылку на текстовое поле
+  const textareaRef = useRef(null);
+
   useEffect(() => {
     api.get(`/models/${id}/`).then(res => setModel(res.data));
     api.get('/users/profile/').then(res => setHasToken(res.data.has_token));
   }, [id]);
+
+  // Эффект для автоматического изменения высоты textarea
+  useEffect(() => {
+    if (textareaRef.current) {
+      // Сбрасываем высоту до auto, чтобы она могла уменьшаться при удалении текста
+      textareaRef.current.style.height = 'auto';
+      // Устанавливаем высоту равной реальной высоте контента
+      textareaRef.current.style.height = `${textareaRef.current.scrollHeight}px`;
+    }
+  }, [prompt]);
 
   const handleRun = async () => {
     if (!prompt.trim()) return;
@@ -58,23 +71,33 @@ function PlaygroundPage() {
 
       <div className="flex flex-col lg:flex-row gap-6 flex-1">
         <div className="card p-4 flex-1 flex flex-col">
-          <h3 className="section-title text-sm">Ваш Промпт</h3>
+          <h3 className="section-title text-xl mb-4">Ваш Промпт</h3>
+          
           <textarea
-            value={prompt} onChange={(e) => setPrompt(e.target.value)}
+            ref={textareaRef}
+            value={prompt} 
+            onChange={(e) => setPrompt(e.target.value)}
             disabled={!hasToken || loading}
-            placeholder={model.output_type === 'TEXT' ? "Что такое пудж" : "Очень диталлизированный pudge..."}
-            className="form-input flex-1 resize-none"
+            placeholder={model.output_type === 'TEXT' ? "Что такое пудж" : "Очень детализированный pudge..."}
+            // min-h-[120px] - начальный размер
+            // max-h-[300px] - лимит расширения, после которого начнется скролл
+            className="form-input resize-none overflow-y-auto min-h-[120px] max-h-[300px]"
+            rows={1}
           />
-          <button 
-            onClick={handleRun} disabled={!hasToken || loading || !prompt}
-            className="btn-primary w-full mt-4"
-          >
-            {loading ? 'Генерация...' : <><Send size={18} className="mr-2" /> Запустить</>}
-          </button>
+          
+          <div className="mt-auto pt-4">
+            <button 
+              onClick={handleRun} 
+              disabled={!hasToken || loading || !prompt}
+              className="btn-primary w-full"
+            >
+              {loading ? 'Генерация...' : <><Send size={18} className="mr-2" /> Запустить</>}
+            </button>
+          </div>
         </div>
 
         <div className="card p-4 flex-1 flex flex-col bg-gray-50 dark:bg-gray-900 border-dashed">
-          <h3 className="section-title text-sm">Результат</h3>
+          <h3 className="section-title text-xl">Результат</h3>
           <div className="card p-4 flex-1 overflow-auto border-none shadow-none text-sm">
             {error && <div className="text-red-500 mb-4">{error}</div>}
             

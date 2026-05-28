@@ -32,7 +32,7 @@
   .btn-icon { @apply p-2 rounded transition-colors hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-500 dark:text-gray-400; }
 
   /* Формы и инпуты */
-  .form-label { @apply block text-lg font-medium mb-2 sm:mb-2 text-gray-900 dark:text-gray-200; }
+  .form-label { @apply block text-base font-medium mb-1 sm:mb-2 text-gray-900 dark:text-gray-200; }
   .form-input { @apply w-full border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 p-2 sm:p-3 rounded text-base focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:bg-gray-100 dark:disabled:bg-gray-900 transition-colors; }
   .form-input.error { @apply border-red-500 focus:ring-red-500; }
 
@@ -67,4 +67,55 @@
   .tab-btn { @apply pb-3 font-medium transition-colors cursor-pointer; }
   .tab-active { @apply text-purple-600 border-b-2 border-purple-600; }
   .tab-default { @apply text-gray-500 hover:text-gray-700 dark:hover:text-gray-300; }
+
+
+  /* Для MD вывода */
+  .prose {
+    @apply text-gray-800 dark:text-gray-200 leading-relaxed text-base;
+  }
+
+  /* Стилизация абзацев и переносов строк */
+  .prose p {
+    @apply mb-4 last:mb-0;
+  }
+
+  /* Стилизация жирного текста (strong) */
+  .prose strong, .prose b {
+    @apply font-semibold text-gray-900 dark:text-white;
+  }
+
+  /* Заголовки внутри ответов моделей */
+  .prose h1, .prose h2, .prose h3, .prose h4 {
+    @apply font-bold text-gray-900 dark:text-white mt-6 mb-3 tracking-tight;
+  }
+  .prose h1 { @apply text-xl sm:text-2xl; }
+  .prose h2 { @apply text-lg sm:text-xl; }
+  .prose h3 { @apply text-base sm:text-lg; }
+
+  /* Списки (Маркированные и Нумерованные) */
+  .prose ul {
+    @apply list-disc pl-5 mb-4 space-y-1.5;
+  }
+  .prose ol {
+    @apply list-decimal pl-5 mb-4 space-y-1.5;
+  }
+  .prose li {
+    @apply text-gray-800 dark:text-gray-200;
+  }
+
+  /* Элементы кода (блоки кода `code` и встроенные строки кода) */
+  .prose code {
+    @apply px-1.5 py-0.5 bg-gray-100 dark:bg-gray-800 text-red-600 dark:text-red-400 rounded text-sm font-mono break-words;
+  }
+  .prose pre {
+    @apply p-4 bg-gray-900 text-gray-100 rounded-lg overflow-x-auto my-4 font-mono text-sm border border-gray-700;
+  }
+  .prose pre code {
+    @apply p-0 bg-transparent text-inherit rounded-none text-sm;
+  }
+
+  /* Цитаты (blockquote) */
+  .prose blockquote {
+    @apply pl-4 border-l-4 border-blue-500 italic text-gray-600 dark:text-gray-400 my-4;
+  }
 }
