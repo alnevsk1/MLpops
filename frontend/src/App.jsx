@@ -26,14 +26,14 @@ const Logo = ({ isDark }) => {
   return isDark ? (
     // Темная тема 
     <svg className="w-auto h-12 sm:h-14 py-1" xmlns="http://www.w3.org/2000/svg" viewBox="50 60 400 350">
-      <text x="250" y="210" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="135" font-weight="bold" fill="#2b76f0" text-anchor="middle">Open</text>
-      <rect x="85" y="245" width="330" height="190" rx="18" ry="18" fill="#2b76f0" />
-      <text x="250" y="380" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="135" font-weight="bold" fill="#ffffff" text-anchor="middle">hub</text>
+      <text x="250" y="210" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="135" font-weight="bold" fill="#ffffff" text-anchor="middle">Open</text>
+      <rect x="85" y="245" width="330" height="190" rx="18" ry="18" fill="#fa9506" />
+      <text x="250" y="380" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="135" font-weight="bold" fill="#1f2937" text-anchor="middle">hub</text>
     </svg>
   ) : (
     // Светлая тема 
     <svg className="w-auto h-12 sm:h-14 py-1" xmlns="http://www.w3.org/2000/svg" viewBox="50 60 400 350">
-      <text x="250" y="210" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="135" font-weight="bold" fill="#0d1624" text-anchor="middle">Open</text>
+      <text x="250" y="210" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="135" font-weight="bold" fill="#1f2937" text-anchor="middle">Open</text>
       <rect x="85" y="245" width="330" height="190" rx="18" ry="18" fill="#2b76f0" />
       <text x="250" y="380" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="135" font-weight="bold" fill="#ffffff" text-anchor="middle">hub</text>
     </svg>

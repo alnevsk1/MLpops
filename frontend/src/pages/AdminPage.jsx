@@ -71,6 +71,11 @@ function AdminPage() {
     }
   };
 
+  const handleFormSubmit = (e) => {
+    e.preventDefault(); // Предотвращает перезагрузку страницы
+    fetchGlobalLogs();
+  };
+
   const isModelFormDirty = () => JSON.stringify({ ...modelForm, tags: [...modelForm.tags].sort() }) !== JSON.stringify({ ...initialModelForm, tags: [...initialModelForm.tags].sort() });
 
   const handleSaveModel = async (e) => {
@@ -233,12 +238,24 @@ function AdminPage() {
         <div className="space-y-8">
           <div className="space-y-4">
             {/* Фильтры */}
-            <div className="bg-gray-100 dark:bg-gray-800 p-4 rounded flex flex-col sm:flex-row gap-4 sm:items-end">
-              <div className="flex-1"><label className="form-label ">User ID/Name</label><input type="text" onChange={e=>setFilters({...filters, user: e.target.value})} className="form-input py-2 text-sm"/></div>
-              <div className="flex-1"><label className="form-label ">Model ID/Name</label><input type="text" onChange={e=>setFilters({...filters, model: e.target.value})} className="form-input py-2 text-sm"/></div>
-              <div className="flex-1"><label className="form-label ">HTTP Статус</label><input type="number" onChange={e=>setFilters({...filters, status: e.target.value})} className="form-input py-2 text-sm"/></div>
-              <button onClick={fetchGlobalLogs} className="btn-primary w-full sm:w-auto">Применить фильтр</button>
-            </div>
+            <form onSubmit={handleFormSubmit} className="bg-gray-100 dark:bg-gray-800 p-4 rounded flex flex-col sm:flex-row gap-4 sm:items-end">
+              <div className="flex-1">
+                <label className="form-label">User ID/Name</label>
+                <input type="text" onChange={e=>setFilters({...filters, user: e.target.value})} className="form-input py-2 text-sm"/>
+              </div>
+              <div className="flex-1">
+                <label className="form-label">Model ID/Name</label>
+                <input type="text" onChange={e=>setFilters({...filters, model: e.target.value})} className="form-input py-2 text-sm"/>
+              </div>
+              <div className="flex-1">
+                <label className="form-label">HTTP Статус</label>
+                <input type="text" onChange={e=>setFilters({...filters, status: e.target.value})} className="form-input py-2 text-sm"/>
+              </div>
+              
+              <button type="submit" className="btn-primary w-full sm:w-auto">
+                Применить фильтр
+              </button>
+            </form>
             
             {/* Таблица логов для Десктопа */}
             <div className="table-container hidden md:block">
