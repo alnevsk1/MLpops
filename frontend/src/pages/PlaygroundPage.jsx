@@ -3,31 +3,28 @@ import { useParams, Link } from 'react-router-dom';
 import { AlertCircle, Send, X } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import api from '../api';
+import { useApi } from '../hooks/useApi';
+import { downloadImage } from '../utils';
+import { OUTPUT_TYPE } from '../constants';
 
 function PlaygroundPage() {
   const { id } = useParams();
-  const [model, setModel] = useState(null);
-  const [hasToken, setHasToken] = useState(true);
+  const { data: model, loading: modelLoading, error: modelError } = useApi(`/models/${id}/`, [id]);
+  const { data: profile, loading: profileLoading } = useApi('/users/profile/');
+
   const [prompt, setPrompt] = useState('');
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [expandedImage, setExpandedImage] = useState(null);
 
-  // Создаем ссылку на текстовое поле
   const textareaRef = useRef(null);
 
-  useEffect(() => {
-    api.get(`/models/${id}/`).then(res => setModel(res.data));
-    api.get('/users/profile/').then(res => setHasToken(res.data.has_token));
-  }, [id]);
+  const hasToken = profile?.has_token ?? true;
 
-  // Эффект для автоматического изменения высоты textarea
   useEffect(() => {
     if (textareaRef.current) {
-      // Сбрасываем высоту до auto, чтобы она могла уменьшаться при удалении текста
       textareaRef.current.style.height = 'auto';
-      // Устанавливаем высоту равной реальной высоте контента
       textareaRef.current.style.height = `${textareaRef.current.scrollHeight}px`;
     }
   }, [prompt]);
@@ -36,7 +33,7 @@ function PlaygroundPage() {
     if (!prompt.trim()) return;
     setLoading(true); setError(''); setResult(null);
 
-    const payload = model.output_type === 'TEXT' 
+    const payload = model.output_type === OUTPUT_TYPE.TEXT
       ? { messages: [{ role: "user", content: prompt }] }
       : { inputs: prompt };
 
@@ -50,13 +47,8 @@ function PlaygroundPage() {
     }
   };
 
-  const downloadImage = (imageUrl, filename) => {
-    const link = document.createElement('a');
-    link.href = imageUrl; link.download = filename || 'image.jpg';
-    document.body.appendChild(link); link.click(); document.body.removeChild(link);
-  };
-
-  if (!model) return <div className="text-center py-8">Загрузка...</div>;
+  if (modelLoading || profileLoading) return <div className="flex justify-center mt-20"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600" /></div>;
+  if (modelError) return <div className="card p-12 text-center text-red-500">{modelError}</div>;
 
   return (
     <div className="h-full flex flex-col">
@@ -65,29 +57,25 @@ function PlaygroundPage() {
       {!hasToken && (
         <div className="alert-warning">
           <AlertCircle size={20} className="flex-shrink-0" />
-          <div><strong>Доступ ограничен.</strong> У вас не настроен токен. <Link to="/settings" className="underline ml-2">Настроить</Link></div>
+          <div><strong>Доступ ограничен.</strong> У вас не настроен токен.<Link to="/settings" className="underline ml-2">Настроить</Link></div>
         </div>
       )}
 
       <div className="flex flex-col lg:flex-row gap-6 flex-1">
         <div className="card p-4 flex-1 flex flex-col">
           <h3 className="section-title text-xl mb-4">Ваш Промпт</h3>
-          
           <textarea
             ref={textareaRef}
-            value={prompt} 
+            value={prompt}
             onChange={(e) => setPrompt(e.target.value)}
             disabled={!hasToken || loading}
-            placeholder={model.output_type === 'TEXT' ? "Что такое пудж" : "Очень детализированный pudge..."}
-            // min-h-[120px] - начальный размер
-            // max-h-[300px] - лимит расширения, после которого начнется скролл
+            placeholder={model.output_type === OUTPUT_TYPE.TEXT ? "Что такое пудж" : "Очень детализированный pudge..."}
             className="form-input resize-none overflow-y-auto min-h-[120px] max-h-[300px]"
             rows={1}
           />
-          
           <div className="mt-auto pt-4">
-            <button 
-              onClick={handleRun} 
+            <button
+              onClick={handleRun}
               disabled={!hasToken || loading || !prompt}
               className="btn-primary w-full"
             >
@@ -100,8 +88,8 @@ function PlaygroundPage() {
           <h3 className="section-title text-xl">Результат</h3>
           <div className="card p-4 flex-1 overflow-auto border-none shadow-none text-sm">
             {error && <div className="text-red-500 mb-4">{error}</div>}
-            
-            {result && model.output_type === 'TEXT' && (
+
+            {result && model.output_type === OUTPUT_TYPE.TEXT && (
               <div className="prose dark:prose-invert max-w-none">
                 <ReactMarkdown>
                   {result.result?.choices?.[0]?.message?.content || result.result?.[0]?.generated_text || JSON.stringify(result.result)}
@@ -109,7 +97,7 @@ function PlaygroundPage() {
               </div>
             )}
 
-            {result && model.output_type === 'IMAGE' && result.image_url && (
+            {result && model.output_type === OUTPUT_TYPE.IMAGE && result.image_url && (
               <div className="flex flex-col items-center">
                 <img src={result.image_url} alt="Gen" onClick={() => setExpandedImage(result.image_url)} className="max-w-full rounded cursor-pointer hover:opacity-90" />
                 <button onClick={() => downloadImage(result.image_url)} className="btn-primary mt-4">Скачать</button>
