@@ -4,7 +4,6 @@ from django.test import TestCase, RequestFactory, override_settings
 from django.urls import reverse
 from django.contrib.auth import get_user_model
 from django.contrib.admin.sites import AdminSite
-from django.core.files.uploadedfile import SimpleUploadedFile
 from rest_framework.test import APIClient
 from rest_framework import status
 
@@ -160,14 +159,20 @@ class CoreAppTests(TestCase):
         self.assertEqual(res.status_code, status.HTTP_200_OK)
         self.assertEqual(res.data['name'], 'Updated Model')
 
-    def test_log_import_view(self):
+    def test_log_export_view(self):
+        InferenceLog.objects.create(
+            user=self.user, model=self.ml_model,
+            latency_ms=150, http_status=200, req_payload={}
+        )
         self.client.force_authenticate(user=self.admin)
-        csv_data = f"model_id,user_id,latency_ms,http_status,req_payload,res_payload\n{self.ml_model.id},{self.user.id},150,200,'{{}}','{{}}'"
-        file = SimpleUploadedFile("logs.csv", csv_data.encode('utf-8'), content_type="text/csv")
-        
-        res = self.client.post(reverse('log_import'), {'file': file})
-        self.assertEqual(res.status_code, status.HTTP_201_CREATED)
-        self.assertEqual(InferenceLog.objects.count(), 1)
+
+        res = self.client.get(reverse('log_export'))
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertEqual(res['Content-Type'], 'text/csv')
+
+        content = b''.join(res.streaming_content).decode('utf-8')
+        self.assertIn('http_status', content)
+        self.assertIn('200', content)
 
     def test_logs_list_filters(self):
         InferenceLog.objects.create(

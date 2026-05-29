@@ -1,9 +1,6 @@
+import re
 from rest_framework import serializers
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
-from django.contrib.auth.password_validation import validate_password
-from django.contrib.auth import authenticate
-from django.core.exceptions import ValidationError as DjangoValidationError
-from django.contrib.auth.validators import UnicodeUsernameValidator
 from .models import User, Tag, MLModel, InferenceLog
 
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
@@ -11,7 +8,7 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
         try:
             return super().validate(attrs)
         except Exception as e:
-            # Переводим стандартные сообщения об ошибках на русский
+            # simplejwt возвращает сообщение на английском — перехватываем и переводим
             if "No active account found" in str(e) or "Unable to log in" in str(e):
                 raise serializers.ValidationError({
                     'non_field_errors': ['Неправильный логин или пароль']
@@ -51,8 +48,6 @@ class RegisterSerializer(serializers.ModelSerializer):
         fields = ('id', 'username', 'password', 'password_confirm')
 
     def validate_username(self, value):
-        import re
-        # Проверка паттерна (буквы, цифры и специальные символы: @, ., +, -, _)
         if not re.match(r'^[\w.@+-]+$', value):
             raise serializers.ValidationError('Логин может содержать только буквы, цифры и символы @, ., +, -, _')
         
@@ -80,7 +75,7 @@ class RegisterSerializer(serializers.ModelSerializer):
         user = User.objects.create_user(
             username=validated_data['username'],
             password=validated_data['password'],
-            role='USER'
+            role=User.USER,
         )
         return user
     
@@ -108,20 +103,17 @@ class AdminMLModelSerializer(serializers.ModelSerializer):
         fields = ('id', 'name', 'endpoint_url', 'hf_model_id', 'status', 'output_type', 'tags')
 
     def to_representation(self, instance):
-        # При чтении возвращаем полные объекты тегов
         ret = super().to_representation(instance)
         ret['tags'] = TagSerializer(instance.tags.all(), many=True).data
         return ret
 
     def update(self, instance, validated_data):
-        # Обновляем основные поля
         instance.name = validated_data.get('name', instance.name)
         instance.endpoint_url = validated_data.get('endpoint_url', instance.endpoint_url)
         instance.hf_model_id = validated_data.get('hf_model_id', instance.hf_model_id)
         instance.status = validated_data.get('status', instance.status)
         instance.output_type = validated_data.get('output_type', instance.output_type)
-        
-        # Обновляем теги ТОЛЬКО с выделенными тегами
+
         if 'tags' in validated_data:
             instance.tags.set(validated_data['tags'])
         
