@@ -12,6 +12,14 @@
 
 ## Быстрый старт через Docker
 
+Скопируйте `.env.example` в `.env` и заполните значения:
+
+```bash
+cp .env.example .env
+```
+
+Запустите контейнеры:
+
 ```bash
 docker-compose up --build
 ```
@@ -33,28 +41,20 @@ docker-compose up --build
 - Node.js 18+
 - PostgreSQL 15
 
-### Backend
+### Настройка окружения
+
+Все переменные окружения хранятся в одном файле `.env` в корне проекта. Скопируйте шаблон и заполните значения:
 
 ```bash
-cd backend
-python -m venv venv
-venv\Scripts\activate        # Windows
-# source venv/bin/activate   # Linux/macOS
-
-pip install -r requirements.txt
+cp .env.example .env
 ```
 
-Пример `.env` представлен в `.env.example:`
+Для локального запуска измени в `.env`:
 
 ```env
-DEBUG=True
-SECRET_KEY=your-secret-key
-FERNET_KEY=                  # см. ниже как сгенерировать
-DB_NAME=mlhub_db
-DB_USER=postgres
-DB_PASSWORD=your-password
 DB_HOST=localhost
-DB_PORT=5432
+VITE_API_BASE_URL=http://localhost:8000/api/v1
+VITE_MEDIA_BASE_URL=http://localhost:8000
 ```
 
 Сгенерировать `FERNET_KEY`:
@@ -64,9 +64,15 @@ from cryptography.fernet import Fernet
 print(Fernet.generate_key().decode())
 ```
 
-Запустить сервер:
+### Backend
 
 ```bash
+cd backend
+python -m venv venv
+venv\Scripts\activate        # Windows
+# source venv/bin/activate   # Linux/macOS
+
+pip install -r requirements.txt
 python manage.py migrate
 python manage.py runserver
 ```
@@ -78,15 +84,6 @@ API будет доступен на http://localhost:8000/api/v1
 ```bash
 cd frontend
 npm install
-```
-
-Скопируй `.env.example` в `.env`:
-
-```env
-VITE_API_BASE_URL=http://localhost:8000/api/v1
-```
-
-```bash
 npm run dev
 ```
 
@@ -96,15 +93,21 @@ npm run dev
 
 ## Переменные окружения
 
-| Переменная  | Описание                                                                            |
-| --------------------- | ------------------------------------------------------------------------------------------- |
-| `SECRET_KEY`        | Django secret key                                                                           |
-| `FERNET_KEY`        | Ключ для шифрования Hugging Face токенов пользователей |
-| `DB_NAME`           | Имя базы данных                                                                |
-| `DB_USER`           | Пользователь PostgreSQL                                                         |
-| `DB_PASSWORD`       | Пароль PostgreSQL                                                                     |
-| `DB_HOST`           | Хост БД (`localhost` или `db` в Docker)                                       |
-| `VITE_API_BASE_URL` | URL backend API для фронтенда                                                   |
+Все переменные задаются в одном файле `.env` в корне проекта (шаблон — `.env.example`).
+
+| Переменная    | Описание                                                                            |
+| ----------------------- | ------------------------------------------------------------------------------------------- |
+| `SECRET_KEY`          | Django secret key                                                                           |
+| `DEBUG`               | Режим отладки (`True` / `False`)                                            |
+| `ALLOWED_HOSTS`       | Список разрешённых хостов через запятую                  |
+| `FERNET_KEY`          | Ключ для шифрования Hugging Face токенов пользователей |
+| `DB_NAME`             | Имя базы данных                                                                |
+| `DB_USER`             | Пользователь PostgreSQL                                                         |
+| `DB_PASSWORD`         | Пароль PostgreSQL                                                                     |
+| `DB_HOST`             | Хост БД (`localhost` для локального запуска, `db` в Docker)  |
+| `DB_PORT`             | Порт PostgreSQL (по умолчанию `5432`)                                      |
+| `VITE_API_BASE_URL`   | URL backend API для фронтенда                                                   |
+| `VITE_MEDIA_BASE_URL` | URL backend для медиафайлов                                                   |
 
 ---
 
@@ -143,5 +146,5 @@ python manage.py createsuperuser
 
 ```bash
 cd backend
-python manage.py test core
+coverage run manage.py test
 ```

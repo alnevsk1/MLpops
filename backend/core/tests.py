@@ -1,3 +1,4 @@
+import tempfile
 from unittest.mock import patch, AsyncMock, MagicMock
 from cryptography.fernet import Fernet
 from django.test import TestCase, RequestFactory, override_settings
@@ -213,7 +214,7 @@ class CoreAppTests(TestCase):
     def test_proxy_inference_image_success(self, MockClient):
         mock_instance = AsyncMock()
         MockClient.return_value.__aenter__.return_value = mock_instance
-        
+
         mock_response = MagicMock()
         mock_response.status_code = 200
         mock_response.content = b'fake_image_bytes'
@@ -222,10 +223,12 @@ class CoreAppTests(TestCase):
         img_model = MLModel.objects.create(name="Img", endpoint_url="http://img", output_type="IMAGE")
         self.user.set_hf_token("dummy_token")
         self.user.save()
-        
+
         self.client.force_authenticate(user=self.user)
-        res = self.client.post(reverse('model_proxy', kwargs={'pk': img_model.id}), {'inputs': 'cat'})
-        
+        with tempfile.TemporaryDirectory() as tmpdir:
+            with override_settings(MEDIA_ROOT=tmpdir):
+                res = self.client.post(reverse('model_proxy', kwargs={'pk': img_model.id}), {'inputs': 'cat'})
+
         self.assertEqual(res.status_code, 200)
         self.assertIn("image_url", res.data)
         log = InferenceLog.objects.last()

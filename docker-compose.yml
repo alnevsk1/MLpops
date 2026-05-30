@@ -4,11 +4,12 @@ services:
   db:
     image: postgres:15-alpine
     container_name: mlhub_db
+    env_file:
+      - ./.env
     environment:
-      # Задаем параметры для инициализации БД
-      POSTGRES_DB: mlhub_db
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: password
+      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
     volumes:
       - pg_data:/var/lib/postgresql/data
     ports:
@@ -23,7 +24,7 @@ services:
     build: ./backend
     container_name: mlhub_backend
     env_file:
-      - ./backend/.env
+      - ./.env
     command: sh -c "python manage.py migrate && python manage.py runserver 0.0.0.0:8000"
     volumes:
       - ./backend/media:/app/media
@@ -34,7 +35,9 @@ services:
         condition: service_healthy
 
   frontend:
-    build: ./frontend
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
     container_name: mlhub_frontend
     ports:
       - "5173:80"

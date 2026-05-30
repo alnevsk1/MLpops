@@ -3,10 +3,10 @@ from datetime import timedelta
 from pathlib import Path
 from dotenv import load_dotenv
 
-# Подгружаем переменные из .env файла
-load_dotenv()
-
 BASE_DIR = Path(__file__).resolve().parent.parent
+
+# Подгружаем переменные из корневого .env файла проекта
+load_dotenv(BASE_DIR.parent / '.env')
 
 SECRET_KEY = os.getenv('SECRET_KEY', 'default-unsafe-secret-key')
 
